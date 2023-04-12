@@ -1,4 +1,7 @@
 %{
 %}
+
+%token INTEGER REAL BOOL STRING CHARACTER IDENTIFIER
+
 %%
 %%
