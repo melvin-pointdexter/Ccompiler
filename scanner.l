@@ -35,5 +35,11 @@ string				{yylval.s = yytext; return STRING;}
 true|false			{yylval.b = atof(yytext); return BOOL_LITERAL;}
 [-+()*/{}]			{return yytext[0];}
 [ \t\f\v\n]			{ ; }
+\|\|				{yylval.s = yytext; return OR;}
+\&\&				{yylval.s = yytext; return AND;}
+\=\=				{yylval.s = yytext; return EQ;}
+\!\=				{yylval.s = yytext; return NE;}
+\>\=				{yylval.s = yytext; return GE;}
+\<\=				{yylval.s = yytext; return LE;}
 
 %%
