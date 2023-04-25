@@ -15,7 +15,7 @@ A brilliant and efficient compiler!
 - [ ] Comments
 
 Mr. S is working on:
->
+> Adding lex rules, reworking yacc rules
 
 Mr. A is working on:
 >
