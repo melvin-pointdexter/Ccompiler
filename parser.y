@@ -2,7 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int indent;
 extern int yylex();
 void yyerror(char *msg);
 %}
@@ -11,43 +10,59 @@ void yyerror(char *msg);
   float f;
   char *s;
   int i;
+  bool b;
+  char c;
 }
 
-%token <f> REAL
-%token <i> INTEGER
-%token <s> FUNCTION IF ELSE VOID INT IDENTIFIER ARG
+%token <f> REAL_LITERAL
+%token <i> INTEGER_LITERAL
+%token <b> BOOL_LITERAL
+%token <c> CHAR_LITERAL
+%token <s> FUNCTION IF ELSE DO WHILE FOR VAR RETURN NULL VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING IDENTIFIER
 
 %type <s> func body expr args
 
+%left '||'
+%left '&&'
+%left '==' '!=' '<=' '>=' '<' '>'
+%left '+' '-'
+%left '*' '/'
+%left '(' '['
+
 %%
 
-S    : S func
-     | func
-     |
-     ;
+S       : func S
+        | proc
+        ;
 
-func : FUNCTION IDENTIFIER '(' args ')' ':' INTEGER '{' body '}'	{printf("function");}
-     | FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'		{printf("procedure");}
+func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' statement '}'
+	;
 
-args : arg ';' args
-     | arg
-     ;
+type	: INT 
+	| REAL
+	| CHAR
+	| BOOL
+	| INT_P
+	| REAL_P
+	| CHAR_P
+	;
 
-arg  : ARG list ':' INTEGER
-     ;
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' statement '}'
+	;
 
-list : IDENTIFIER ',' list
-     | IDENTIFIER
-     ;
+args    : args ';' ARG vardecl
+        | ARG vardecl
+        ;
 
-body : IF '{' body '}' body
-     | IF '{' body '}' ELSE '{' body '}' body
-     | expr body
-     | func body
-     ;
+vardecl : list ':' type
+        ;
 
-expr : IDENTIFIER '=' IDENTIFIER '+' IDENTIFIER				{printf("%s = %s + %s", $1, $3, $5);}
-     ;
+list    : IDENTIFIER ',' list
+        | IDENTIFIER
+	;
+
+body	:	{/* complete */}
+	;
 
 %%
 
@@ -57,7 +72,6 @@ void yyerror(char *msg) {
 }
 
 int main() {
-    indent=0;
     yyparse();
     return 0;
 }
