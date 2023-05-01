@@ -1,16 +1,16 @@
 %{
 #include <stdio.h>
-#include <stdlib.h>
+//#include <stdlib.h>
+#include "lex.yy.c"
 
 extern int yylex();
-void yyerror(char *msg);
 %}
 
 %union {
   float f;
   char *s;
   int i;
-  bool b;
+  unsigned int b;
   char c;
 }
 
@@ -18,7 +18,7 @@ void yyerror(char *msg);
 %token <i> INTEGER_LITERAL
 %token <b> BOOL_LITERAL
 %token <c> CHAR_LITERAL
-%token <s> FUNCTION IF ELSE DO WHILE FOR VAR RETURN NULL VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING IDENTIFIER
+%token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
 %token OR "||" AND "&&" EQ "==" NE "!=" GE ">=" LE "<="
 
 token 
@@ -41,13 +41,14 @@ S       : func S
 func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body '}'
 	;
 
-type	: INT 
-	| REAL
-	| CHAR
-	| BOOL
-	| INT_P
-	| REAL_P
-	| CHAR_P
+type	: INT    {printf("int\n"); 
+				printf("int: %d, %s", yylval.i, yytext);}
+	| REAL    {printf("%f, %s", yylval.f, yytext);}
+	| CHAR    {printf("%s",yytext);}    
+	| BOOL    {printf("%u, %s", yylval.b, yytext);}
+	| INT_P    {printf("%s, %s", yylval.s, yytext);}
+	| REAL_P    {printf("%s, %s", yylval.s, yytext);}
+	| CHAR_P    {printf("%s, %s", yylval.s, yytext);}
 	;
 
 proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'
@@ -69,9 +70,10 @@ body	:	{/* complete */}
 
 %%
 
-void yyerror(char *msg) {
+int yyerror(char *msg) {
      fprintf(stderr, "%s\n", msg);
-     exit(1);
+     //exit(1);
+    return 1;
 }
 
 int main() {
