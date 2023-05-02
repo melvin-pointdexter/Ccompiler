@@ -21,7 +21,7 @@ extern int yylex();
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
 %token OR AND EQ NE GE LE
 
-%type <s> func body expr args type proc varlist argdecl arglist
+%type <s> func statement expr args type proc varlist argdecl arglist
 
 %right '='
 %left OR
@@ -38,8 +38,8 @@ S       : func S
         | proc
         ;
 
-func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body '}'
+func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' statement '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' type '{' statement '}'
 	;
 
 type	: INT    {printf("int\n"); printf("int: %d, %s", yylval.i, yytext);}
@@ -51,8 +51,8 @@ type	: INT    {printf("int\n"); printf("int: %d, %s", yylval.i, yytext);}
 	| CHAR_P    {printf("%s, %s", yylval.s, yytext);}
 	;
 
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' statement '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' statement '}'
 	;
 
 args    : args ';' ARG argdecl
@@ -66,14 +66,15 @@ arglist : IDENTIFIER ',' arglist
         | IDENTIFIER
 	;
 
-body	: IF '(' expr ')' '{' body '}' 
-	| WHILE '(' expr ')' '{' body '}'
-	| RETURN expr ';' body
-	| VAR varlist ':' type ';' body
-	| expr ';' body
-	| IDENTIFIER '=' expr ';' body
-	| 
-	;
+statement	: IF '(' expr ')' '{' statement '}' 
+		| WHILE '(' expr ')' '{' statement '}'
+		| RETURN expr ';' statement
+		| VAR varlist ':' type ';' statement
+		| expr ';' statement
+		| IDENTIFIER '=' expr ';' statement
+		| func statement
+		| 
+		;
 
 varlist	: IDENTIFIER ',' varlist
 	| IDENTIFIER '=' expr ',' varlist
