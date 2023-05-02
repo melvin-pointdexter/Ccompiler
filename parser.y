@@ -19,15 +19,15 @@ extern int yylex();
 %token <b> BOOL_LITERAL
 %token <c> CHAR_LITERAL
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
-%token OR "||" AND "&&" EQ "==" NE "!=" GE ">=" LE "<="
+%token OR AND EQ NE GE LE
 
-token 
+%type <s> func body expr args type proc varlist argdecl arglist
 
-%type <s> func body expr args type proc vardecl
-
+%right '='
 %left OR
 %left AND
-%left EQ NE LE GE '<' '>'
+%left EQ NE
+%left LE GE '<' '>'
 %left '+' '-'
 %left '*' '/'
 %left '(' '['
@@ -39,10 +39,10 @@ S       : func S
         ;
 
 func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body '}'
 	;
 
-type	: INT    {printf("int\n"); 
-				printf("int: %d, %s", yylval.i, yytext);}
+type	: INT    {printf("int\n"); printf("int: %d, %s", yylval.i, yytext);}
 	| REAL    {printf("%f, %s", yylval.f, yytext);}
 	| CHAR    {printf("%s",yytext);}    
 	| BOOL    {printf("%u, %s", yylval.b, yytext);}
@@ -52,26 +52,55 @@ type	: INT    {printf("int\n");
 	;
 
 proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'
 	;
 
-args    : args ';' ARG vardecl
-        | ARG vardecl
+args    : args ';' ARG argdecl
+        | ARG argdecl
         ;
 
-vardecl : list ':' type
+argdecl : arglist ':' type
         ;
 
-list    : IDENTIFIER ',' list
+arglist : IDENTIFIER ',' arglist
         | IDENTIFIER
 	;
 
-body	:	{/* complete */}
+body	: IF '(' expr ')' '{' body '}' 
+	| WHILE '(' expr ')' '{' body '}'
+	| RETURN expr ';'
+	| VAR varlist ':' type ';'
+	| expr ';'
+	| IDENTIFIER '=' expr ';'
+	;
+
+varlist	: IDENTIFIER ',' varlist
+	| IDENTIFIER '=' expr ',' varlist
+	| IDENTIFIER
+	;
+
+expr	: IDENTIFIER
+	| REAL_LITERAL
+	| INTEGER_LITERAL
+	| BOOL_LITERAL
+	| expr '+' expr
+	| expr '-' expr
+	| expr '*' expr
+	| expr '/' expr
+	| expr OR expr
+	| expr AND expr
+	| expr EQ expr
+	| expr NE expr
+	| expr GE expr
+	| expr LE expr
+	| expr '>' expr
+	| expr '<' expr
 	;
 
 %%
 
 int yyerror(char *msg) {
-     fprintf(stderr, "%s\n", msg);
+     fprintf(stderr, "\n%s\nyylval:%s\n", msg, yylval);
      //exit(1);
     return 1;
 }

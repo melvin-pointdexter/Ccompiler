@@ -1,6 +1,7 @@
 %{
 #include <stdio.h>
 //#include <stdlib.h>
+#include <ctype.h>
 #include "y.tab.h"	//generated via yacc -d
 
 int yyerror(char *msg);
@@ -34,10 +35,11 @@ string					{yylval.s = yytext; return STRING;}
 0[xX][0-9A-F]+				{yylval.i = atof(yytext); return INTEGER_LITERAL;}
 [-+][0-9]+(\.[0-9]+)			{yylval.f = atof(yytext); return REAL_LITERAL;}
 [-+][0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)	{yylval.f = atof(yytext); return REAL_LITERAL;}
-'.'					{yylval.c = yytext[1]; return CHAR_LITERAL;}
-\"[a-zA-Z0-9]*\"			{yylval.s = yytext; return STRING_LITERAL;}
+'.'					{if (isprint(yytext[1]){yylval.c = yytext[1]; return CHAR_LITERAL;} yyerror("current character is not printable.");}
+\".*\".*\".*\" {yyerror("double quotes are not allowed.");}
+\"[ -~]*\"			{yylval.s = yytext; return STRING_LITERAL;}
 true|false				{yylval.b = atof(yytext); return BOOL_LITERAL;}
-[-+()*/{}\;\|\,\[\]\(\)]		{return yytext[0];}
+[-+()*/{}\;\|\,\[\]\(\)\:]		{return yytext[0];}
 [ \t\f\v\n]				{ }
 \|\|					{yylval.s = yytext; return OR;}
 \&\&					{yylval.s = yytext; return AND;}

@@ -1,6 +1,9 @@
 *.out
 lex.yy.c
 y.tab.c
+*.t
+*.h
+*.txt
 
 .parser.y.swp
 
