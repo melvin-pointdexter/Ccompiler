@@ -68,14 +68,16 @@ arglist : IDENTIFIER ',' arglist
 
 body	: IF '(' expr ')' '{' body '}' 
 	| WHILE '(' expr ')' '{' body '}'
-	| RETURN expr ';'
-	| VAR varlist ':' type ';'
-	| expr ';'
-	| IDENTIFIER '=' expr ';'
+	| RETURN expr ';' body
+	| VAR varlist ':' type ';' body
+	| expr ';' body
+	| IDENTIFIER '=' expr ';' body
+	| 
 	;
 
 varlist	: IDENTIFIER ',' varlist
 	| IDENTIFIER '=' expr ',' varlist
+	| IDENTIFIER '=' expr
 	| IDENTIFIER
 	;
 
@@ -109,3 +111,4 @@ int main() {
     yyparse();
     return 0;
 }
+
