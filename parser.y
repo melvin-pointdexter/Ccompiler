@@ -21,7 +21,7 @@ extern int yylex();
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
 %token <s> OR AND EQ NE GE LE
 
-%type <s> func statement expr args type proc varlist argdecl arglist
+%type <s> func proc_statement func_statement statement expr args type proc varlist argdecl arglist
 
 %right '='
 %left OR
@@ -38,8 +38,12 @@ S       : func S
         | proc
         ;
 
-func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' statement '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' type '{' statement '}'
+func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' func_statement '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' type '{' func_statement '}'
+	;
+	
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' proc_statement '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' proc_statement '}'
 	;
 
 type	: INT    {printf("int\n"); printf("int: %s, %s", yylval.s, yytext);}
@@ -49,10 +53,6 @@ type	: INT    {printf("int\n"); printf("int: %s, %s", yylval.s, yytext);}
 	| INT_P    {printf("%s, %s", yylval.s, yytext);}
 	| REAL_P    {printf("%s, %s", yylval.s, yytext);}
 	| CHAR_P    {printf("%s, %s", yylval.s, yytext);}
-	;
-
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' statement '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' statement '}'
 	;
 
 args    : args ';' ARG argdecl
@@ -66,14 +66,27 @@ arglist : IDENTIFIER ',' arglist
         | IDENTIFIER
 	;
 
-statement	: IF '(' expr ')' '{' statement '}' 
-		| WHILE '(' expr ')' '{' statement '}'
-		| RETURN expr ';' statement
-		| VAR varlist ':' type ';' statement {printf("varlist statemt");}
-		| expr ';' statement
-		| IDENTIFIER '=' expr ';' statement
-		| func statement
-		| 
+proc_statement	: IF '(' expr ')' '{' proc_statement '}' proc_statement
+		| WHILE '(' expr ')' '{' proc_statement '}' proc_statement 
+		| RETURN ';'
+		| statement proc_statement
+		|
+		;
+		
+func_statement	: statement func_statement
+		| IF '(' expr ')' '{' func_statement '}' func_statement
+		| IF '(' expr ')' '{' proc_statement '}' func_statement
+		| WHILE '(' expr ')' '{' func_statement '}' func_statement
+		| WHILE '(' expr ')' '{' proc_statement '}' func_statement
+		| RETURN expr ';' func_statement
+		| RETURN expr ';'
+		;
+
+statement	: VAR varlist ':' type ';'		{printf("varlist statemt");}
+		| expr ';'
+		| IDENTIFIER '=' expr ';'
+		| func
+		| proc
 		;
 
 varlist	: IDENTIFIER ',' varlist
@@ -98,6 +111,9 @@ expr	: IDENTIFIER
 	| expr LE expr
 	| expr '>' expr
 	| expr '<' expr
+	| '|' STRING_LITERAL '|'
+	| '*' IDENTIFIER
+	| '&' IDENTIFIER
 	;
 
 %%
