@@ -14,12 +14,12 @@ extern int yylex();
   char c;
 }
 
-%token <f> REAL_LITERAL
-%token <i> INTEGER_LITERAL
-%token <b> BOOL_LITERAL
-%token <c> CHAR_LITERAL
+%token <s> REAL_LITERAL
+%token <s> INTEGER_LITERAL
+%token <s> BOOL_LITERAL
+%token <s> CHAR_LITERAL
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
-%token OR AND EQ NE GE LE
+%token <s> OR AND EQ NE GE LE
 
 %type <s> func statement expr args type proc varlist argdecl arglist
 
@@ -42,10 +42,10 @@ func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' statement '}'
 	| FUNCTION IDENTIFIER '(' ')' ':' type '{' statement '}'
 	;
 
-type	: INT    {printf("int\n"); printf("int: %d, %s", yylval.i, yytext);}
-	| REAL    {printf("%f, %s", yylval.f, yytext);}
+type	: INT    {printf("int\n"); printf("int: %s, %s", yylval.s, yytext);}
+	| REAL    {printf("%s, %s", yylval.s, yytext);}
 	| CHAR    {printf("%s",yytext);}    
-	| BOOL    {printf("%u, %s", yylval.b, yytext);}
+	| BOOL    {printf("%s, %s", yylval.s, yytext);}
 	| INT_P    {printf("%s, %s", yylval.s, yytext);}
 	| REAL_P    {printf("%s, %s", yylval.s, yytext);}
 	| CHAR_P    {printf("%s, %s", yylval.s, yytext);}
@@ -69,7 +69,7 @@ arglist : IDENTIFIER ',' arglist
 statement	: IF '(' expr ')' '{' statement '}' 
 		| WHILE '(' expr ')' '{' statement '}'
 		| RETURN expr ';' statement
-		| VAR varlist ':' type ';' statement
+		| VAR varlist ':' type ';' statement {printf("varlist statemt");}
 		| expr ';' statement
 		| IDENTIFIER '=' expr ';' statement
 		| func statement
@@ -103,7 +103,7 @@ expr	: IDENTIFIER
 %%
 
 int yyerror(char *msg) {
-     fprintf(stderr, "\n%s\nyylval:%s\n", msg, yylval);
+     fprintf(stderr, "\n%s\nyylval:%s\n", msg, yylval.s);
      //exit(1);
     return 1;
 }

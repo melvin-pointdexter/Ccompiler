@@ -30,16 +30,17 @@ real					{yylval.s = yytext; return REAL;}
 char					{yylval.s = yytext; return CHAR;}
 bool					{yylval.s = yytext; return BOOL;}
 string					{yylval.s = yytext; return STRING;}
-[a-zA-Z][a-zA-Z0-9]*			{yylval.s = yytext; return IDENTIFIER;}
-[0-9]+					{yylval.i = atof(yytext); return INTEGER_LITERAL;}
-0[xX][0-9A-F]+				{yylval.i = atof(yytext); return INTEGER_LITERAL;}
-[-+][0-9]+(\.[0-9]+)			{yylval.f = atof(yytext); return REAL_LITERAL;}
-[-+][0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)	{yylval.f = atof(yytext); return REAL_LITERAL;}
-'.'					{if (isprint(yytext[1]){yylval.c = yytext[1]; return CHAR_LITERAL;} yyerror("current character is not printable.");}
+true				{yylval.s = yytext; return BOOL_LITERAL;}
+false				{yylval.s = yytext; return BOOL_LITERAL;}
+[a-zA-Z][a-zA-Z0-9]*			{printf("1:%s", yytext); yylval.s = yytext; return IDENTIFIER;}
+[0-9]+					{yylval.s = yytext; return INTEGER_LITERAL;}
+0[xX][0-9A-F]+				{yylval.s = yytext; return INTEGER_LITERAL;}
+[-+][0-9]+(\.[0-9]+)			{yylval.s = yytext; return REAL_LITERAL;}
+[-+][0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)	{yylval.s = yytext; return REAL_LITERAL;}
+'.'					{if (isprint(yytext[1])){yylval.s = yytext; return CHAR_LITERAL; } yyerror("current character is not printable."); }
 \".*\".*\".*\" {yyerror("double quotes are not allowed.");}
 \"[ -~]*\"			{yylval.s = yytext; return STRING_LITERAL;}
-true|false				{yylval.b = atof(yytext); return BOOL_LITERAL;}
-[-+()*/{}\;\|\,\[\]\(\)\:]		{return yytext[0];}
+[-+()*/{}\;\|\,=\[\]\(\)\:]		{return yytext[0];}
 [ \t\f\v\n]				{ }
 \|\|					{yylval.s = yytext; return OR;}
 \&\&					{yylval.s = yytext; return AND;}
@@ -47,5 +48,4 @@ true|false				{yylval.b = atof(yytext); return BOOL_LITERAL;}
 \!\=					{yylval.s = yytext; return NE;}
 \>\=					{yylval.s = yytext; return GE;}
 \<\=					{yylval.s = yytext; return LE;}
-.					{yyerror("entered invalid sequence in language's code");}
-%%
+.					{yyerror(yytext);}
