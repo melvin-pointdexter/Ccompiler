@@ -44,28 +44,33 @@ func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'
 	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'
 	;
 	
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 2, NODE_PROC); $$->nodes[0] = mknode($2,0,NODE_TERMINAL);$$->nodes[1] = mknode($6,0,NODE_TERMINAL);}
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = mknode($2,0,NODE_TERMINAL);
+														  $$->nodes[1] = mknode(args ,0,);
+														$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL);														  
+														$$->nodes[3] = mknode($8, 0,BODY);}
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 3, NODE_PROC); $$->nodes[0] = mknode($2,0,NODE_TERMINAL);
+														  $$->nodes[1] = mknode("RET VOID",0,NODE_TERMINAL);
+														  $$->nodes[2] = $8;}
 	;
 
-type	: INT    {printf("int: %s", yylval.s);} // $0 is INT, type is $$
-	| REAL    {printf("%s, %s", yylval.s, yytext);}
-	| CHAR    {printf("%s",yytext);}    
-	| BOOL    {printf("%s, %s", yylval.s, yytext);}
-	| INT_P    {printf("%s, %s", yylval.s, yytext);}
-	| REAL_P    {printf("%s, %s", yylval.s, yytext);}
-	| CHAR_P    {printf("%s, %s", yylval.s, yytext);}
+type	: INT    { $$ = mknode("INT", 0, DONT_ADD_TAB);}
+	| REAL    { $$ = mknode("REAL", 0, DONT_ADD_TAB);}
+	| CHAR    { $$ = mknode("CHAR", 0, DONT_ADD_TAB);} 
+	| BOOL    { $$ = mknode("BOOL", 0, DONT_ADD_TAB);}
+	| INT_P    { $$ = mknode("INT_P", 0, DONT_ADD_TAB);}
+	| REAL_P    { $$ = mknode("REAL_P", 0, DONT_ADD_TAB);}
+	| CHAR_P    { $$ = mknode("CHAR_P", 0, DONT_ADD_TAB);}
 	;
 
-args    : args ';' ARG argdecl
-        | ARG argdecl
+args    : args ';' ARG argdecl {$$ = mkdir("", 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $4;}
+        | ARG argdecl {$$ = mknode("ARGS", 1 , DONT_ADD_TAB); $$->nodes[0] = $2;}
         ;
 
-argdecl : arglist ':' type
+argdecl : arglist ':' type {$$ = mkdir("", 2, DONT_ADD_TAB); $$->nodes[0] = $4; $$->nodes[0] = $1;}
         ;
 
-arglist : IDENTIFIER ',' arglist
-        | IDENTIFIER
+arglist : IDENTIFIER ',' arglist {$$ = mkdir($1, 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[0] = $3;}
+        | IDENTIFIER {$$ = mkdir($1, 0, DONT_ADD_TAB);}
 	;					
 	
 body: func_prod_list var_decl_list statements_list 
@@ -73,19 +78,19 @@ body: func_prod_list var_decl_list statements_list
 	| func_prod_list statements_list
 	| func_prod_list
 	| var_decl_list statements_list
-	| var_decl_list
+	| var_decl_list { $$ = $1; }
 	| statements_list
-	|
+	| { $$ = mknode("NONE", 0, DONT_ADD_TAB);}
 	;
 	 
 func_prod_list : func				{ $$ = $1; }
-		| func func_prod_list		{ $$ = mknode(NULL, 0, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| func func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		| proc				{ $$ = $1; }
-		| proc func_prod_list		{ $$ = mknode(NULL, 0, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| proc func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		;
 		
-var_decl_list : VAR varlist ':' type ';'
-		| VAR varlist ':' type ';' var_decl_list
+var_decl_list : VAR varlist ':' type ';' { $$ = mknode($4, 1, DONT_ADD_TAB); $$->nodes[0] = $2;}
+		| VAR varlist ':' type ';' var_decl_list{ $$ = mknode($4, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $5;}
 		;
 		
 		
@@ -95,25 +100,11 @@ body_of_nested_statement : var_decl_list statements_list
 			  |
 			  ;		
 
-/*
-func_statement	: func_statement statement
-		| func_statement statement_include_ret
-		| func_statement RETURN expr ';'
-		| body_no_statement func_statement
-		| body_no_statement RETURN expr  ';'
-		;
-
-
-body_of_nested_statement_include_ret:   VAR varlist ':' type ';' body_of_nested_statement_include_ret
-						| body_of_nested_statement  statement_include_ret
-						| 
-						;
-
-*/
 
 statements_list : statement
 		| statement statements_list
 		;
+
 		
 assign_statement	: IDENTIFIER '=' expr ';'
 				| IDENTIFIER '[' expr ']' '=' expr ';'
@@ -123,45 +114,30 @@ assign_statement	: IDENTIFIER '=' expr ';'
 statement	:  assign_statement
 		| IF '(' expr ')' '{' body_of_nested_statement '}'
 		| WHILE '(' expr ')' '{' body_of_nested_statement '}'
-		;
-
-statement_include_ret	: statement RETURN expr ';'
-					/*| IF '(' expr ')' '{' body_of_nested_statement_include_ret '}'
-					| WHILE '(' expr ')' '{' body_of_nested_statement_include_ret '}'*/
-					| RETURN expr ';' statement
-					;
-					
-			// TODO: find all combinations:
-			/*
-statements_can_use_ret_list : statements_list statements_can_use_ret_list
-			     | RETURN expr ';' statements_can_use_ret_list
-			     | RETURN expr ';'
-			     |
-			     ;*/
+		| '{' body_of_nested_statement '}';			
 				
-				
-varlist	: IDENTIFIER ',' varlist
-	| IDENTIFIER '=' expr ',' varlist
-	| IDENTIFIER '=' expr
-	| IDENTIFIER
+varlist	: IDENTIFIER ',' varlist  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| IDENTIFIER '=' expr ',' varlist  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| IDENTIFIER '=' expr  { $$ = mknode($1, 2, DONT_ADD_TAB); $$->nodes[0] = mknode("=", 0, ADD_TAB); $$->nodes[1] = $3;}
+	| IDENTIFIER { $$ = mknode($1, 0, DONT_ADD_TAB);}
 	;
 
-expr	: IDENTIFIER
-	| REAL_LITERAL
-	| INTEGER_LITERAL
-	| BOOL_LITERAL
-	| expr '+' expr
-	| expr '-' expr
-	| expr '*' expr
-	| expr '/' expr
-	| expr OR expr
-	| expr AND expr
-	| expr EQ expr
-	| expr NE expr
-	| expr GE expr
-	| expr LE expr
-	| expr '>' expr
-	| expr '<' expr
+expr	: IDENTIFIER  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| REAL_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| INTEGER_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| BOOL_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| expr '+' expr  { $$ = mknode("+", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '-' expr { $$ = mknode("-", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '*' expr { $$ = mknode("*", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '/' expr { $$ = mknode("/", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr OR expr { $$ = mknode("||", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr AND expr { $$ = mknode("&&", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr EQ expr { $$ = mknode("==", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr NE expr { $$ = mknode("!=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr GE expr { $$ = mknode(">=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr LE expr { $$ = mknode("<=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '>' expr { $$ = mknode(">", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '<' expr { $$ = mknode("<", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
 	;
 	
 	/*| '|' STRING_LITERAL '|'
@@ -172,7 +148,7 @@ expr	: IDENTIFIER
 %%
 
 int yyerror(char *msg) {
-     fprintf(stderr, "\n%s\nyylval:%s\n", msg, yylval.s);
+     fprintf(stderr, "\n%s\nerror has been detected after: %s\n", msg, yylval.s);
      //exit(1);
     return 1;
 }
