@@ -19,13 +19,9 @@ extern int yylex();
 %token <s> BOOL_LITERAL
 %token <s> CHAR_LITERAL
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
-%token <s> OR AND EQ NE GE LE '*' '|' '&' '{' '}'
+%token <s> OR AND EQ NE GE LE
 
-<<<<<<< Updated upstream
 %type <s> proc func statement statement_include_ret expr args type varlist argdecl arglist
-=======
-%type <s> func proc_statement func_statement statement expr args type proc varlist argdecl arglist proc_codeblock func_codeblock codeblock
->>>>>>> Stashed changes
 
 %right '='
 %left OR
@@ -38,24 +34,18 @@ extern int yylex();
 
 %%
 
-S       : func S	{ printAst($1, 0); }
-        | proc		{ printAst($1, 0); }
+S       : func S
+        | proc
         ;
 
-<<<<<<< Updated upstream
 func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'
 	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'
-=======
-func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' func_statement '}'	{ $$ = mknode("FUNCTION", ); }
-	| FUNCTION IDENTIFIER '(' ')' ':' type '{' func_statement '}'
->>>>>>> Stashed changes
 	;
 	
 proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'
 	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'
 	;
 
-<<<<<<< Updated upstream
 type	: INT    {printf("int: %s", yylval.s);} // $0 is INT, type is $$
 	| REAL    {printf("%s, %s", yylval.s, yytext);}
 	| CHAR    {printf("%s",yytext);}    
@@ -63,15 +53,6 @@ type	: INT    {printf("int: %s", yylval.s);} // $0 is INT, type is $$
 	| INT_P    {printf("%s, %s", yylval.s, yytext);}
 	| REAL_P    {printf("%s, %s", yylval.s, yytext);}
 	| CHAR_P    {printf("%s, %s", yylval.s, yytext);}
-=======
-type	: INT		{}
-	| REAL		{}
-	| CHAR		{}    
-	| BOOL		{}
-	| INT_P		{}
-	| REAL_P	{}
-	| CHAR_P	{}
->>>>>>> Stashed changes
 	;
 
 args    : args ';' ARG argdecl
@@ -94,7 +75,6 @@ body: func_prod_list var_decl_list statements_list
 	| statements_list
 	|
 	;
-<<<<<<< Updated upstream
 	 
 func_prod_list : func
 		| func func_prod_list
@@ -119,23 +99,6 @@ func_statement	: func_statement statement
 		| func_statement RETURN expr ';'
 		| body_no_statement func_statement
 		| body_no_statement RETURN expr  ';'
-=======
-
-proc_statement	: 
-		| statement proc_statement
-		| IF '(' expr ')' '{' proc_codeblock '}' proc_statement
-		| WHILE '(' expr ')' '{' proc_codeblock '}' proc_statement 
-		| '{' proc_codeblock '}' proc_statement
-		| RETURN ';' proc_statement
-		;
-		
-func_statement	: statement func_statement
-		| IF '(' expr ')' '{' func_codeblock '}' func_statement
-		| WHILE '(' expr ')' '{' func_codeblock '}' func_statement
-		| '{' func_codeblock '}' func_statement
-		| RETURN expr ';' func_statement
-		| RETURN expr ';'
->>>>>>> Stashed changes
 		;
 
 
@@ -160,7 +123,6 @@ statement	:  assign_statement
 		| WHILE '(' expr ')' '{' body_of_nested_statement '}'
 		;
 
-<<<<<<< Updated upstream
 statement_include_ret	: statement RETURN expr ';'
 					/*| IF '(' expr ')' '{' body_of_nested_statement_include_ret '}'
 					| WHILE '(' expr ')' '{' body_of_nested_statement_include_ret '}'*/
@@ -176,24 +138,6 @@ statements_can_use_ret_list : statements_list statements_can_use_ret_list
 			     ;*/
 				
 				
-=======
-proc_codeblock	: codeblock
-		| codeblock RETURN ';'
-		| proc_codeblock '{' proc_codeblock '}'
-		;
-
-func_codeblock	: codeblock
-		| codeblock RETURN expr ';'
-		| func_codeblock '{' func_codeblock '}'
-		;
-
-codeblock	: 
-		| VAR varlist ':' type ';' codeblock
-		| codeblock expr ';'
-		| codeblock IDENTIFIER '=' expr ';'
-		;
-
->>>>>>> Stashed changes
 varlist	: IDENTIFIER ',' varlist
 	| IDENTIFIER '=' expr ',' varlist
 	| IDENTIFIER '=' expr
@@ -221,13 +165,7 @@ expr	: IDENTIFIER
 	/*| '|' STRING_LITERAL '|'
 	| '*' IDENTIFIER
 	| '&' IDENTIFIER
-<<<<<<< Updated upstream
 	;*/
-=======
-	| IDENTIFIER '(' ')'
-	| IDENTIFIER '(' arglist ')'
-	;
->>>>>>> Stashed changes
 
 %%
 
@@ -241,4 +179,5 @@ int main() {
     yyparse();
     return 0;
 }
+
 
