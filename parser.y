@@ -21,7 +21,7 @@ extern int yylex();
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
 %token <s> OR AND EQ NE GE LE
 
-%type <s> func proc_statement func_statement statement expr args type proc varlist argdecl arglist
+%type <s> proc func statement statement_include_ret expr args type varlist argdecl arglist
 
 %right '='
 %left OR
@@ -38,15 +38,15 @@ S       : func S
         | proc
         ;
 
-func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' func_statement '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' type '{' func_statement '}'
+func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'
 	;
 	
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' proc_statement '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' proc_statement '}'
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'
 	;
 
-type	: INT    {printf("int\n"); printf("int: %s, %s", yylval.s, yytext);}
+type	: INT    {printf("int: %s", yylval.s);} // $0 is INT, type is $$
 	| REAL    {printf("%s, %s", yylval.s, yytext);}
 	| CHAR    {printf("%s",yytext);}    
 	| BOOL    {printf("%s, %s", yylval.s, yytext);}
@@ -64,31 +64,80 @@ argdecl : arglist ':' type
 
 arglist : IDENTIFIER ',' arglist
         | IDENTIFIER
+	;					
+	
+body: func_prod_list var_decl_list statements_list 
+	| func_prod_list var_decl_list
+	| func_prod_list statements_list
+	| func_prod_list
+	| var_decl_list statements_list
+	| var_decl_list
+	| statements_list
+	|
 	;
-
-proc_statement	: IF '(' expr ')' '{' proc_statement '}' proc_statement
-		| WHILE '(' expr ')' '{' proc_statement '}' proc_statement 
-		| RETURN ';'
-		| statement proc_statement
-		|
+	 
+func_prod_list : func
+		| func func_prod_list
+		| proc
+		| proc func_prod_list
 		;
 		
-func_statement	: statement func_statement
-		| IF '(' expr ')' '{' func_statement '}' func_statement
-		| IF '(' expr ')' '{' proc_statement '}' func_statement
-		| WHILE '(' expr ')' '{' func_statement '}' func_statement
-		| WHILE '(' expr ')' '{' proc_statement '}' func_statement
-		| RETURN expr ';' func_statement
-		| RETURN expr ';'
+var_decl_list : VAR varlist ':' type ';'
+		| VAR varlist ':' type ';' var_decl_list
+		;
+		
+		
+body_of_nested_statement : var_decl_list statements_list
+			  | var_decl_list
+			  | statements_list
+			  |
+			  ;		
+
+/*
+func_statement	: func_statement statement
+		| func_statement statement_include_ret
+		| func_statement RETURN expr ';'
+		| body_no_statement func_statement
+		| body_no_statement RETURN expr  ';'
 		;
 
-statement	: VAR varlist ':' type ';'		{printf("varlist statemt");}
-		| expr ';'
-		| IDENTIFIER '=' expr ';'
-		| func
-		| proc
+
+body_of_nested_statement_include_ret:   VAR varlist ':' type ';' body_of_nested_statement_include_ret
+						| body_of_nested_statement  statement_include_ret
+						| 
+						;
+
+*/
+
+statements_list : statement
+		| statement statements_list
+		;
+		
+assign_statement	: IDENTIFIER '=' expr ';'
+				| IDENTIFIER '[' expr ']' '=' expr ';'
+				| '*' IDENTIFIER '=' expr ';'
+				;		
+
+statement	:  assign_statement
+		| IF '(' expr ')' '{' body_of_nested_statement '}'
+		| WHILE '(' expr ')' '{' body_of_nested_statement '}'
 		;
 
+statement_include_ret	: statement RETURN expr ';'
+					/*| IF '(' expr ')' '{' body_of_nested_statement_include_ret '}'
+					| WHILE '(' expr ')' '{' body_of_nested_statement_include_ret '}'*/
+					| RETURN expr ';' statement
+					;
+					
+			// TODO: find all combinations:
+			/*
+statements_can_use_ret_list : statements_list statements_can_use_ret_list
+			     | RETURN expr ';' statements_can_use_ret_list
+			     | RETURN expr ';'
+			     |
+			     ;*/
+				
+				
 varlist	: IDENTIFIER ',' varlist
 	| IDENTIFIER '=' expr ',' varlist
 	| IDENTIFIER '=' expr
@@ -111,10 +160,12 @@ expr	: IDENTIFIER
 	| expr LE expr
 	| expr '>' expr
 	| expr '<' expr
-	| '|' STRING_LITERAL '|'
+	;
+	
+	/*| '|' STRING_LITERAL '|'
 	| '*' IDENTIFIER
 	| '&' IDENTIFIER
-	;
+	;*/
 
 %%
 
