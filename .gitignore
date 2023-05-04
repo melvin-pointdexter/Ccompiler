@@ -1,9 +1,10 @@
-*.out
+*.outy
 lex.yy.c
 y.tab.c
 *.t
 *.h
 *.txt
+*.out
 
 .parser.y.swp
 

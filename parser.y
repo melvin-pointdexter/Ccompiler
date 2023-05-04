@@ -2,6 +2,7 @@
 #include <stdio.h>
 //#include <stdlib.h>
 #include "lex.yy.c"
+#include "ast.c"
 
 extern int yylex();
 %}
@@ -12,6 +13,7 @@ extern int yylex();
   int i;
   unsigned int b;
   char c;
+  struct node* n;
 }
 
 %token <s> REAL_LITERAL
@@ -19,9 +21,10 @@ extern int yylex();
 %token <s> BOOL_LITERAL
 %token <s> CHAR_LITERAL
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
+%token <c> '(' ')' '{' '}' ':' ';'
 %token <s> OR AND EQ NE GE LE
 
-%type <s> proc func statement statement_include_ret expr args type varlist argdecl arglist
+%type <n> S proc func statement statement_include_ret expr args type varlist argdecl arglist func_prod_list body
 
 %right '='
 %left OR
@@ -34,16 +37,15 @@ extern int yylex();
 
 %%
 
-S       : func S
-        | proc
+S       : func_prod_list		{ $$ = mknode("Code", 1, NODE_PROGRAM); $$->nodes[0] = $1 ; printAst($$,0);}
         ;
 
-func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'
+func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}' { /*$$-> = mknode("Func", 12, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2;*/ }
 	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'
 	;
 	
 proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 2, NODE_PROC); $$->nodes[0] = mknode($2,0,NODE_TERMINAL);$$->nodes[1] = mknode($6,0,NODE_TERMINAL);}
 	;
 
 type	: INT    {printf("int: %s", yylval.s);} // $0 is INT, type is $$
@@ -76,10 +78,10 @@ body: func_prod_list var_decl_list statements_list
 	|
 	;
 	 
-func_prod_list : func
-		| func func_prod_list
-		| proc
-		| proc func_prod_list
+func_prod_list : func				{ $$ = $1; }
+		| func func_prod_list		{ $$ = mknode(NULL, 0, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| proc				{ $$ = $1; }
+		| proc func_prod_list		{ $$ = mknode(NULL, 0, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		;
 		
 var_decl_list : VAR varlist ':' type ';'

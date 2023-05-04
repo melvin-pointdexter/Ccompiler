@@ -30,9 +30,9 @@ real					{yylval.s = yytext; return REAL;}
 char					{yylval.s = yytext; return CHAR;}
 bool					{yylval.s = yytext; return BOOL;}
 string					{yylval.s = yytext; return STRING;}
-true				{yylval.s = yytext; return BOOL_LITERAL;}
-false				{yylval.s = yytext; return BOOL_LITERAL;}
-[a-zA-Z][a-zA-Z0-9]*			{printf("1:%s", yytext); yylval.s = yytext; return IDENTIFIER;}
+true					{yylval.s = yytext; return BOOL_LITERAL;}
+false					{yylval.s = yytext; return BOOL_LITERAL;}
+[a-zA-Z][a-zA-Z0-9]*			{yylval.s = yytext; return IDENTIFIER;}
 [0-9]+					{yylval.s = yytext; return INTEGER_LITERAL;}
 0[xX][0-9A-F]+				{yylval.s = yytext; return INTEGER_LITERAL;}
 [-+][0-9]+(\.[0-9]+)			{yylval.s = yytext; return REAL_LITERAL;}
@@ -40,7 +40,7 @@ false				{yylval.s = yytext; return BOOL_LITERAL;}
 '.'					{if (isprint(yytext[1])){yylval.s = yytext; return CHAR_LITERAL; } yyerror("current character is not printable."); }
 \".*\".*\".*\" {yyerror("double quotes are not allowed.");}
 \"[ -~]*\"			{yylval.s = yytext; return STRING_LITERAL;}
-[-+()*/{}\;\|\,=\[\]\(\)\:]		{return yytext[0];}
+[-+()*/{}\;\|\,=\[\]\(\)\:]		{yylval.s =yytext[0];return yytext[0];}
 [ \t\f\v\n]				{ }
 \|\|					{yylval.s = yytext; return OR;}
 \&\&					{yylval.s = yytext; return AND;}
