@@ -2,7 +2,7 @@
 #include <stdio.h>
 //#include <stdlib.h>
 #include "lex.yy.c"
-#include "ast.c"
+#include "ast.h"
 
 extern int yylex();
 %}
@@ -20,11 +20,13 @@ extern int yylex();
 %token <s> INTEGER_LITERAL
 %token <s> BOOL_LITERAL
 %token <s> CHAR_LITERAL
-%token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL IDENTIFIER
-%token <c> '(' ')' '{' '}' ':' ';'
+%token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL
+%token <n> IDENTIFIER
+//%token <c> '(' ')' '{' '}' ':' ';'
 %token <s> OR AND EQ NE GE LE
 
-%type <n> S proc func statement statement_include_ret expr args type varlist argdecl arglist func_prod_list body
+%type <n> S proc func assign_statement statement statements_list expr args type varlist var_decl_list 
+%type <n> argdecl arglist func_prod_list body
 
 %right '='
 %left OR
@@ -44,12 +46,12 @@ func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'
 	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'
 	;
 	
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = mknode($2,0,NODE_TERMINAL);
-														  $$->nodes[1] = mknode(args ,0,);
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = $2;
+														  $$->nodes[1] = mknode($4 ,0, ADD_TAB);
 														$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL);														  
-														$$->nodes[3] = mknode($8, 0,BODY);}
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 3, NODE_PROC); $$->nodes[0] = mknode($2,0,NODE_TERMINAL);
-														  $$->nodes[1] = mknode("RET VOID",0,NODE_TERMINAL);
+														$$->nodes[3] = mknode($8, 0, ADD_TAB); }
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
+														  $$->nodes[1] = mknode("RET VOID", 0, NODE_TERMINAL);
 														  $$->nodes[2] = $8;}
 	;
 
@@ -66,7 +68,7 @@ args    : args ';' ARG argdecl {$$ = mkdir("", 2, DONT_ADD_TAB); $$->nodes[0] = 
         | ARG argdecl {$$ = mknode("ARGS", 1 , DONT_ADD_TAB); $$->nodes[0] = $2;}
         ;
 
-argdecl : arglist ':' type {$$ = mkdir("", 2, DONT_ADD_TAB); $$->nodes[0] = $4; $$->nodes[0] = $1;}
+argdecl : arglist ':' type {$$ = mkdir("", 2, DONT_ADD_TAB); $$->nodes[0] = $3; $$->nodes[1] = $1;}
         ;
 
 arglist : IDENTIFIER ',' arglist {$$ = mkdir($1, 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[0] = $3;}
@@ -148,7 +150,7 @@ expr	: IDENTIFIER  { $$ = mknode($1, 0, DONT_ADD_TAB);}
 %%
 
 int yyerror(char *msg) {
-     fprintf(stderr, "\n%s\nerror has been detected after: %s\n", msg, yylval.s);
+     fprintf(stderr, "\n%s\nerror in line %d after: %s\n", msg, yylineno, yylval.s);
      //exit(1);
     return 1;
 }
