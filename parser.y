@@ -49,7 +49,7 @@ func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'
 proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = $2;
 														  $$->nodes[1] = mknode($4 ,0, ADD_TAB);
 														$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL);														  
-														$$->nodes[3] = mknode($8, 0, ADD_TAB); }
+														$$->nodes[3] = $9;}
 	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
 														  $$->nodes[1] = mknode("RET VOID", 0, NODE_TERMINAL);
 														  $$->nodes[2] = $8;}
@@ -64,15 +64,15 @@ type	: INT    { $$ = mknode("INT", 0, DONT_ADD_TAB);}
 	| CHAR_P    { $$ = mknode("CHAR_P", 0, DONT_ADD_TAB);}
 	;
 
-args    : args ';' ARG argdecl {$$ = mkdir("", 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $4;}
+args    : args ';' ARG argdecl {$$ = mknode("", 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $4;}
         | ARG argdecl {$$ = mknode("ARGS", 1 , DONT_ADD_TAB); $$->nodes[0] = $2;}
         ;
 
-argdecl : arglist ':' type {$$ = mkdir("", 2, DONT_ADD_TAB); $$->nodes[0] = $3; $$->nodes[1] = $1;}
+argdecl : arglist ':' type {$$ = mknode("", 2, DONT_ADD_TAB); $$->nodes[0] = $3; $$->nodes[1] = $1;}
         ;
 
-arglist : IDENTIFIER ',' arglist {$$ = mkdir($1, 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[0] = $3;}
-        | IDENTIFIER {$$ = mkdir($1, 0, DONT_ADD_TAB);}
+arglist : IDENTIFIER ',' arglist {$$ = mknode(',', 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[0] = $3;}
+        | IDENTIFIER {$$ = $1}
 	;					
 	
 body: func_prod_list var_decl_list statements_list 
@@ -92,7 +92,7 @@ func_prod_list : func				{ $$ = $1; }
 		;
 		
 var_decl_list : VAR varlist ':' type ';' { $$ = mknode($4, 1, DONT_ADD_TAB); $$->nodes[0] = $2;}
-		| VAR varlist ':' type ';' var_decl_list{ $$ = mknode($4, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $5;}
+		| VAR varlist ':' type ';' var_decl_list { $$ = mknode($4, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $6;}
 		;
 		
 		
@@ -119,12 +119,12 @@ statement	:  assign_statement
 		| '{' body_of_nested_statement '}';			
 				
 varlist	: IDENTIFIER ',' varlist  { $$ = mknode($1, 0, DONT_ADD_TAB);}
-	| IDENTIFIER '=' expr ',' varlist  { $$ = mknode($1, 0, DONT_ADD_TAB);}
-	| IDENTIFIER '=' expr  { $$ = mknode($1, 2, DONT_ADD_TAB); $$->nodes[0] = mknode("=", 0, ADD_TAB); $$->nodes[1] = $3;}
-	| IDENTIFIER { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| IDENTIFIER '=' expr ',' varlist
+	| IDENTIFIER '=' expr  { $$ = mknode("=", 2, DONT_ADD_TAB); $$->nodes[0] = $1 $$->nodes[1] = $3;}
+	| IDENTIFIER { $$ = $1}
 	;
 
-expr	: IDENTIFIER  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+expr	: IDENTIFIER  { $$ = $1}
 	| REAL_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
 	| INTEGER_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
 	| BOOL_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
