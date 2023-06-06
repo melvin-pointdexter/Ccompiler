@@ -23,7 +23,7 @@ extern int yylex();
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL
 %token <n> IDENTIFIER
 %token <s> OR AND EQ NE GE LE
-%type <n> S proc func assign_statement statement statements_list expr args type varlist var_decl_list 
+%type <n> S proc func assign_statement statement statements_list expr args type varlist var_decl_list stringlist
 %type <n> argdecl arglist func_prod_list body
 
 %right '='
@@ -43,9 +43,9 @@ S       : func_prod_list		{ $$ = mknode("Code", 1, NODE_PROGRAM); $$->nodes[0] =
         ;
 
 func_prod_list : func				{ $$ = $1; }
-		| func func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| func func_prod_list		{ $$ = mknode("", 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		| proc				{ $$ = $1; }
-		| proc func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| proc func_prod_list		{ $$ = mknode("", 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		;
 
 func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}' { /*$$-> = mknode("Func", 12, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2;*/ }
@@ -53,7 +53,7 @@ func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'
 	;
 	
 proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Proc", 4, NODE_PROC); $$->nodes[0] = $2;
-													$$->nodes[1] = $4;
+													$$->nodes[1] = mknode("ARGS",1, ADD_TAB); $$->nodes[1]->nodes[0]=$4;
 													$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL);
 													$$->nodes[3] = $9;}
 	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
@@ -70,8 +70,8 @@ type	: INT    { $$ = mknode("INT", 0, DONT_ADD_TAB);}
 	| CHAR_P    { $$ = mknode("CHAR_P", 0, DONT_ADD_TAB);}
 	;
 
-args    : args ';' ARG argdecl {$$ = mknode("", 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $4;}
-        | ARG argdecl {$$ = mknode("ARGS", 1 , ADD_TAB); $$->nodes[0] = $2;}
+args    : args ';' ARG argdecl {$$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $4;}
+        | ARG argdecl {$$ = mknode("", 1 , DONT_PRINT); $$->nodes[0] = $2;}
         ;
 
 argdecl : arglist ':' type {$$ = mknode("args", 2, DONT_PRINT); $$->nodes[0] = $3; $$->nodes[1] = $1;}
@@ -81,20 +81,32 @@ arglist : IDENTIFIER ',' arglist { $$ = mknode(",", 2, DONT_PRINT); $$->nodes[0]
         | IDENTIFIER { $$ = $1;}
 	;					
 	
-body: func_prod_list var_decl_list statements_list 
-	| func_prod_list var_decl_list
-	| func_prod_list statements_list
-	| func_prod_list
-	| var_decl_list statements_list
-	| var_decl_list { $$ = $1; }
-	| statements_list
-	| { $$ = mknode("NONE", 0, DONT_ADD_TAB);}
+body: func_prod_list var_decl_list statements_list	{ $$ = mknode("", 3, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2; $$->nodes[2] = $3;}
+	| func_prod_list var_decl_list			{ $$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2;}
+	| func_prod_list statements_list		{ $$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2;}
+	| func_prod_list				{ $$ = $1; }
+	| var_decl_list statements_list			{ $$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2;}
+	| var_decl_list					{ $$ = $1; }
+	| statements_list				{ $$ = $1; }
+	| { $$ = mknode("NONE", 0, DONT_PRINT);}
 	;
 		
-var_decl_list : VAR varlist ':' type ';' { $$ = mknode($4, 1, DONT_ADD_TAB); $$->nodes[0] = $2;}
-		| VAR varlist ':' type ';' var_decl_list { $$ = mknode($4, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $6;}
-		| STRING stringlist ';' { $$ = mknode("String declaration", 0, DONT_ADD_TAB);}
-		| STRING stringlist ';' var_decl_list { $$ = mknode("String declaration", 0, DONT_ADD_TAB);}
+var_decl_list : VAR varlist ':' type ';' { $$ = mknode($4->token, 1, DONT_ADD_TAB); $$->nodes[0] = $2;}
+		| VAR varlist ':' type ';' var_decl_list { $$ = mknode($4->token, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $6;}
+		| STRING stringlist ';' { $$ = mknode("String declaration", 1, DONT_ADD_TAB); $$->nodes[0] = $2; }
+		| STRING stringlist ';' var_decl_list { $$ = mknode("String declaration", 2, DONT_ADD_TAB);  $$->nodes[0] = $2;  $$->nodes[1] = $4;}
+		;
+
+varlist	: IDENTIFIER ',' varlist		{ $$ = mknode($1->token, 1, DONT_ADD_TAB); $$->nodes[0] = $3;}
+	| IDENTIFIER '=' expr ',' varlist	{ $$ = mknode($1->token, 3, DONT_ADD_TAB); $$->nodes[0] = mknode("=",0,DONT_ADD_TAB); $$->nodes[1] = $3; $$->nodes[2] = $5; }
+	| IDENTIFIER '=' expr			{ $$ = mknode($1->token, 2, DONT_ADD_TAB); $$->nodes[0] = mknode("=",0,DONT_ADD_TAB); $$->nodes[1] = $3; }
+	| IDENTIFIER 				{ $$ = $1;}
+	;
+
+stringlist 	: IDENTIFIER '[' INTEGER_LITERAL ']' ',' stringlist
+		| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL ',' stringlist  
+		| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL
+		| IDENTIFIER '[' INTEGER_LITERAL ']'
 		;
 		
 		
@@ -111,15 +123,15 @@ statements_list : statement
 
 		
 assign_statement	: IDENTIFIER '=' expr ';'
-				| IDENTIFIER '[' expr ']' '=' expr ';'
-				| '*' IDENTIFIER '=' expr ';'
-				;		
+			| IDENTIFIER '[' expr ']' '=' expr ';'
+			| '*' IDENTIFIER '=' expr ';'
+			;		
 
 cond_else_statement 	:  IF '(' expr ')' statement ';' ELSE statement ';'
-						|  IF '(' expr ')' '{' body_of_nested_statement '}' ELSE '{' body_of_nested_statement '}'
-						;
+			|  IF '(' expr ')' '{' body_of_nested_statement '}' ELSE '{' body_of_nested_statement '}'
+			;
 
-cond_statement:  IF '(' expr ')' statement %prec then_var ';'
+cond_statement : IF '(' expr ')' statement %prec then_var ';'
 		 | IF '(' expr ')' '{' body_of_nested_statement '}' %prec then_var 
 		 ;			
 
@@ -128,18 +140,6 @@ statement	: assign_statement
 		| cond_statement
 		|   '{' body_of_nested_statement '}'
 		;			
-
-varlist	: IDENTIFIER ',' varlist  { $$ = $1;}
-	| IDENTIFIER '=' expr ',' varlist
-	| IDENTIFIER '=' expr  { $$ = mknode("=", 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| IDENTIFIER { $$ = $1;}
-	;
-
-stringlist 	: IDENTIFIER '[' INTEGER_LITERAL ']' ',' stringlist
-	| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL ',' stringlist  
-	| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL
-	| IDENTIFIER '[' INTEGER_LITERAL ']'
-	;
 
 expr	: '(' expr ')'
 	| IDENTIFIER  { $$ = $1;}

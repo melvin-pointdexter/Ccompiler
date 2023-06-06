@@ -22,6 +22,7 @@
 #define NODE_FUNC_PROD_LIST 13
 #define DONT_ADD_TAB 14
 #define DONT_PRINT 15
+#define DONT_NEWLINE 16
 typedef struct node {
 	char* token;
 	int sons;
@@ -45,7 +46,8 @@ struct node* mknode(char* token, int sizeArr, int nodeType) {
 }
 void printAst(struct node* tree, int tabs) {
 	if (tree->NODETYPE!=DONT_PRINT){
-		printf("\n");
+		if (tree->NODETYPE!=DONT_NEWLINE)
+			printf("\n");
 		//print current node with enough tabs
 		for (int i = 0; i < tabs; i++)
 			printf("\t");
