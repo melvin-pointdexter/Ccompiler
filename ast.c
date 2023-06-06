@@ -31,7 +31,7 @@ struct node* mknode(char* token, int sizeArr, int nodeType);
 void printAst(struct node* tree, int tabs);
 
 struct node* mknode(char* token, int sizeArr, int nodeType) {
-	//printf("Test");
+	printf("%s\n", token);
 	struct node* newNode = (node*)malloc(sizeof(node));
 	newNode->token = (char*)malloc(sizeof(token) + 1);
 	strcpy(newNode->token, token);
@@ -45,7 +45,7 @@ void printAst(struct node* tree, int tabs) {
 	//print current node with enough tabs
 	for (int i = 0; i < tabs; i++)
 		printf("\t");
-	printf("(%s ", tree->token);
+	printf("(%s %d", tree->token, tree->sons);
 
 	//decide how many tabs there are in the other nodes
 	int newTabs = tabs;

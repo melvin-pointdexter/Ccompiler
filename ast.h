@@ -21,6 +21,7 @@
 #define NODE_TERMINAL 12
 #define NODE_FUNC_PROD_LIST 13
 #define DONT_ADD_TAB 14
+#define DONT_PRINT 15
 typedef struct node {
 	char* token;
 	int sons;
@@ -43,12 +44,14 @@ struct node* mknode(char* token, int sizeArr, int nodeType) {
 	return newNode;
 }
 void printAst(struct node* tree, int tabs) {
-	printf("\n");
-	//print current node with enough tabs
-	for (int i = 0; i < tabs; i++)
-		printf("\t");
-	printf("(%s ", tree->token);
-
+	if (tree->NODETYPE!=DONT_PRINT){
+		printf("\n");
+		//print current node with enough tabs
+		for (int i = 0; i < tabs; i++)
+			printf("\t");
+	
+		printf("(%s %d", tree->token, tree->sons);
+	}
 	//decide how many tabs there are in the other nodes
 	int newTabs = tabs;
 	switch (tree->NODETYPE) {
@@ -65,14 +68,16 @@ void printAst(struct node* tree, int tabs) {
 
 	for (int i = 0; i < tree->sons; i++) {
 		printAst(tree->nodes[i],newTabs);
-		
 	}
-	if (tree->sons!=0){
-		printf("\n");
-		for (int i = 0; i < tabs; i++)
-			printf("\t");
+	
+	if (tree->NODETYPE!=DONT_PRINT) {
+		if (tree->sons!=0){
+			printf("\n");
+			for (int i = 0; i < tabs; i++)
+				printf("\t");
+		}
+		printf(")");
 	}
-	printf(")");
 }
 
 #endif

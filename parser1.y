@@ -39,17 +39,23 @@ extern int yylex();
 %nonassoc ELSE
 %%
 
-S       : func_prod_list		{ $$ = mknode("Code", 1, NODE_PROGRAM); $$->nodes[0] = $1 ;} //printAst($$,0);}
+S       : func_prod_list		{ $$ = mknode("Code", 1, NODE_PROGRAM); $$->nodes[0] = $1 ; printAst($$,0);}
         ;
+
+func_prod_list : func				{ $$ = $1; }
+		| func func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| proc				{ $$ = $1; }
+		| proc func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		;
 
 func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}' { /*$$-> = mknode("Func", 12, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2;*/ }
 	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'
 	;
 	
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = $2;
-														  $$->nodes[1] = mknode($4 ,0, ADD_TAB);
-														$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL);														  
-														$$->nodes[3] = $9;}
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Proc", 4, NODE_PROC); $$->nodes[0] = $2;
+													$$->nodes[1] = $4;
+													$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL);
+													$$->nodes[3] = $9;}
 	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
 														  $$->nodes[1] = mknode("RET VOID", 0, NODE_TERMINAL);
 														  $$->nodes[2] = $8;}
@@ -65,13 +71,13 @@ type	: INT    { $$ = mknode("INT", 0, DONT_ADD_TAB);}
 	;
 
 args    : args ';' ARG argdecl {$$ = mknode("", 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $4;}
-        | ARG argdecl {$$ = mknode("ARGS", 1 , DONT_ADD_TAB); $$->nodes[0] = $2;}
+        | ARG argdecl {$$ = mknode("ARGS", 1 , ADD_TAB); $$->nodes[0] = $2;}
         ;
 
-argdecl : arglist ':' type {$$ = mknode("", 2, DONT_ADD_TAB); $$->nodes[0] = $3; $$->nodes[1] = $1;}
+argdecl : arglist ':' type {$$ = mknode("args", 2, DONT_PRINT); $$->nodes[0] = $3; $$->nodes[1] = $1;}
         ;
 
-arglist : IDENTIFIER ',' arglist { $$ = mknode(',', 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[0] = $3;}
+arglist : IDENTIFIER ',' arglist { $$ = mknode(",", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $3;}
         | IDENTIFIER { $$ = $1;}
 	;					
 	
@@ -84,12 +90,6 @@ body: func_prod_list var_decl_list statements_list
 	| statements_list
 	| { $$ = mknode("NONE", 0, DONT_ADD_TAB);}
 	;
-	 
-func_prod_list : func				{ $$ = $1; }
-		| func func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
-		| proc				{ $$ = $1; }
-		| proc func_prod_list		{ $$ = mknode(NULL, 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
-		;
 		
 var_decl_list : VAR varlist ':' type ';' { $$ = mknode($4, 1, DONT_ADD_TAB); $$->nodes[0] = $2;}
 		| VAR varlist ':' type ';' var_decl_list { $$ = mknode($4, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $6;}
@@ -179,6 +179,7 @@ int yyerror(char *msg) {
 
 int main() {
     yyparse();
+    
     return 0;
 }
 
