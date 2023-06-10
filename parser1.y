@@ -25,7 +25,7 @@ extern int yylex();
 %token <n> IDENTIFIER
 %token <s> OR AND EQ NE GE LE
 %type <n> S proc func assign_statement statement statements_list expr args type varlist var_decl_list stringlist
-%type <n> argdecl arglist func_prod_list body
+%type <n> argdecl arglist func_prod_list body cond_statement cond_else_statement body_of_nested_statement
 
 %right '='
 %left OR
@@ -49,37 +49,39 @@ func_prod_list : func				{ $$ = $1; }
 		| proc func_prod_list		{ $$ = mknode("", 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		;
 
-func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}' { /*$$-> = mknode("Func", 12, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2;*/ }
-	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'
+func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'	{ $$ = mknode("Func", 5, NODE_PROC); $$->nodes[0] = $2; $$->nodes[1] = $7;
+											$$->nodes[2] = mknode("ARGS",1, ADD_TAB); $$->nodes[2]->nodes[0]=$4;
+											$$->nodes[3] = $9; $$->nodes[4] = mknode("Return",1,DONT_NEWLINE); $$->nodes[4]->nodes[0] = $11; }
+	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'		{$$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = $2; $$->nodes[1] = $6;
+											$$->nodes[2] = $8; $$->nodes[3] = mknode("Return",1,DONT_NEWLINE); $$->nodes[3]->nodes[0] = $10; }
 	;
 	
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'   { $$ = mknode("Proc", 4, NODE_PROC); $$->nodes[0] = $2;
-													$$->nodes[1] = mknode("ARGS",1, ADD_TAB); $$->nodes[1]->nodes[0]=$4;
-													$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL);
-													$$->nodes[3] = $9;}
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Func", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
-														  $$->nodes[1] = mknode("RET VOID", 0, NODE_TERMINAL);
-														  $$->nodes[2] = $8;}
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'	{ $$ = mknode("Proc", 4, NODE_PROC); $$->nodes[0] = $2;
+									$$->nodes[1] = mknode("ARGS",1, ADD_TAB); $$->nodes[1]->nodes[0]=$4;
+									$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL); $$->nodes[3] = $9;}
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Proc", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
+									$$->nodes[1] = mknode("RET VOID", 0, NODE_TERMINAL);
+									$$->nodes[2] = $8;}
 	;
 
-type	: INT    { $$ = mknode("INT", 0, DONT_ADD_TAB);}
-	| REAL    { $$ = mknode("REAL", 0, DONT_ADD_TAB);}
-	| CHAR    { $$ = mknode("CHAR", 0, DONT_ADD_TAB);} 
-	| BOOL    { $$ = mknode("BOOL", 0, DONT_ADD_TAB);}
-	| INT_P    { $$ = mknode("INT_P", 0, DONT_ADD_TAB);}
-	| REAL_P    { $$ = mknode("REAL_P", 0, DONT_ADD_TAB);}
-	| CHAR_P    { $$ = mknode("CHAR_P", 0, DONT_ADD_TAB);}
+type	: INT		{ $$ = mknode("INT", 0, DONT_ADD_TAB);}
+	| REAL		{ $$ = mknode("REAL", 0, DONT_ADD_TAB);}
+	| CHAR		{ $$ = mknode("CHAR", 0, DONT_ADD_TAB);} 
+	| BOOL		{ $$ = mknode("BOOL", 0, DONT_ADD_TAB);}
+	| INT_P		{ $$ = mknode("INT_P", 0, DONT_ADD_TAB);}
+	| REAL_P	{ $$ = mknode("REAL_P", 0, DONT_ADD_TAB);}
+	| CHAR_P	{ $$ = mknode("CHAR_P", 0, DONT_ADD_TAB);}
 	;
 
-args    : args ';' ARG argdecl {$$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $4;}
-        | ARG argdecl {$$ = mknode("", 1 , DONT_PRINT); $$->nodes[0] = $2;}
+args    : args ';' ARG argdecl		{$$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $4;}
+        | ARG argdecl			{$$ = mknode("", 1 , DONT_PRINT); $$->nodes[0] = $2;}
         ;
 
-argdecl : arglist ':' type {$$ = mknode("args", 2, DONT_PRINT); $$->nodes[0] = $3; $$->nodes[1] = $1;}
+argdecl : arglist ':' type		{$$ = mknode("args", 2, DONT_PRINT); $$->nodes[0] = $3; $$->nodes[1] = $1;}
         ;
 
-arglist : IDENTIFIER ',' arglist { $$ = mknode(",", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-        | IDENTIFIER { $$ = $1;}
+arglist : IDENTIFIER ',' arglist	{ $$ = mknode(",", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+        | IDENTIFIER			{ $$ = $1;}
 	;					
 	
 body: func_prod_list var_decl_list statements_list	{ $$ = mknode("", 3, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2; $$->nodes[2] = $3;}
@@ -89,13 +91,13 @@ body: func_prod_list var_decl_list statements_list	{ $$ = mknode("", 3, DONT_PRI
 	| var_decl_list statements_list			{ $$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2;}
 	| var_decl_list					{ $$ = $1; }
 	| statements_list				{ $$ = $1; }
-	| { $$ = mknode("NONE", 0, DONT_PRINT);}
+	| 						{ $$ = mknode("NONE", 0, DONT_PRINT);}
 	;
 		
-var_decl_list : VAR varlist ':' type ';' { $$ = mknode($4->token, 1, DONT_ADD_TAB); $$->nodes[0] = $2;}
-		| VAR varlist ':' type ';' var_decl_list { $$ = mknode($4->token, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $6;}
-		| STRING stringlist ';' { $$ = mknode("String declaration", 1, DONT_ADD_TAB); $$->nodes[0] = $2; }
-		| STRING stringlist ';' var_decl_list { $$ = mknode("String declaration", 2, DONT_ADD_TAB);  $$->nodes[0] = $2;  $$->nodes[1] = $4;}
+var_decl_list : VAR varlist ':' type ';'			{ $$ = mknode($4->token, 1, DONT_ADD_TAB); $$->nodes[0] = $2;}
+		| VAR varlist ':' type ';' var_decl_list	{ $$ = mknode($4->token, 2, DONT_ADD_TAB); $$->nodes[0] = $2; $$ -> nodes[1] = $6;}
+		| STRING stringlist ';'				{ $$ = mknode("String declaration", 1, DONT_ADD_TAB); $$->nodes[0] = $2; }
+		| STRING stringlist ';' var_decl_list		{ $$ = mknode("String declaration", 2, DONT_ADD_TAB);  $$->nodes[0] = $2;  $$->nodes[1] = $4;}
 		;
 
 varlist	: IDENTIFIER ',' varlist		{ $$ = mknode($1->token, 1, DONT_ADD_TAB); $$->nodes[0] = $3; }
@@ -116,66 +118,76 @@ stringlist 	: IDENTIFIER '[' INTEGER_LITERAL ']' ',' stringlist			{ char* buffer
 		| IDENTIFIER '[' INTEGER_LITERAL ']'					{ char* buffer; int size = asprintf(&buffer, "String [%s]", $3->token);
 											if (size) { $$ = mknode(buffer, 1, DONT_ADD_TAB); } else { $$ = mknode("String", 1, DONT_ADD_TAB); } 
 											$$->nodes[0] = $1; }
-		;
-		
-		
-body_of_nested_statement : var_decl_list statements_list
-			  | var_decl_list
-			  | statements_list
-			  |
-			  ;		
+		;		
 
 
-statements_list : statement
-		| statement statements_list
+statements_list : statement			{ $$ = mknode("Statement", 1, DONT_ADD_TAB); $$->nodes[0] = $1; }
+		| statement statements_list	{ $$ = mknode("Statement", 2, DONT_ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		;
 
+statement	: assign_statement			{ $$ = $1; }
+		| cond_else_statement			{ $$ = $1; }
+		| cond_statement			{ $$ = $1; }
+		| '{' body_of_nested_statement '}'	{ $$ = mknode("Nested", 1, ADD_TAB); $$->nodes[0] = $2; }
+		;
 		
-assign_statement	: IDENTIFIER '=' expr ';'
-			| IDENTIFIER '[' expr ']' '=' expr ';'
-			| '*' IDENTIFIER '=' expr ';'
+assign_statement	: IDENTIFIER '=' expr ';'			{ $$ = mknode($1->token, 1, DONT_ADD_TAB); $$->nodes[0] = $3; }
+			| IDENTIFIER '[' expr ']' '=' expr ';'		{ char* buffer; int size = asprintf(&buffer, "%s [", $1->token);
+									if (size) { $$ = mknode(buffer, 3, DONT_ADD_TAB); } else { $$ = mknode($1->token, 3, DONT_ADD_TAB); } 
+									$$->nodes[0] = $3; $$->nodes[1] = mknode("] =", 0, DONT_NEWLINE); $$->nodes[2] = $6;}
+			| '*' IDENTIFIER '=' expr ';'			{ $$ = mknode("value of pointer ", 3, DONT_ADD_TAB);
+									$$->nodes[0] = $2; $$->nodes[1] = mknode("=",0,DONT_NEWLINE); $$->nodes[2] = $4; }
 			;		
 
-cond_else_statement 	:  IF '(' expr ')' statement ';' ELSE statement ';'
-			|  IF '(' expr ')' '{' body_of_nested_statement '}' ELSE '{' body_of_nested_statement '}'
+cond_else_statement 	:  IF '(' expr ')' statement ';' ELSE statement ';'			{$$ = mknode("IF ELSE",2,ADD_TAB); $$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
+												$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $5;
+												$$->nodes[1] = mknode("ELSE",1, ADD_TAB); $$->nodes[1]->nodes[0] = $8; }
+			|  IF '(' expr ')' '{' body_of_nested_statement '}' ELSE '{' body_of_nested_statement '}'	{$$ = mknode("IF ELSE",2,ADD_TAB);
+														$$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
+														$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $6;
+														$$->nodes[1] = mknode("ELSE",1, ADD_TAB); $$->nodes[1]->nodes[0] = $10; }
 			;
 
-cond_statement : IF '(' expr ')' statement %prec then_var ';'
-		 | IF '(' expr ')' '{' body_of_nested_statement '}' %prec then_var 
-		 ;			
+cond_statement	: IF '(' expr ')' statement %prec then_var ';'				{ $$ = mknode("IF", 3, ADD_TAB); $$->nodes[0] = $3;
+											$$->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[2] = $5; }
+		 | IF '(' expr ')' '{' body_of_nested_statement '}' %prec then_var	{ $$ = mknode("IF", 3, ADD_TAB); $$->nodes[0] = $3;
+											$$->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[2] = $6; }
+		 ;
 
-statement	: assign_statement
-		| cond_else_statement
-		| cond_statement
-		|   '{' body_of_nested_statement '}'
-		;			
+body_of_nested_statement	: var_decl_list statements_list		{ $$ = mknode("",2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+			  	| var_decl_list				{ $$ = $1; }
+			  	| statements_list			{ $$ = $1; }
+			  	|					{ $$ = mknode("",0,DONT_PRINT); }
+			  	;		
 
-expr	: '(' expr ')'
-	| IDENTIFIER  { $$ = $1;}
-	| REAL_LITERAL  { $$ = mknode($1,0,DONT_ADD_TAB);}
-	| INTEGER_LITERAL  { $$ = $1;}
-	| BOOL_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
-	| STRING_LITERAL
-	| IDENTIFIER '[' expr ']'
-	| expr '+' expr  { $$ = mknode("+", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr '-' expr { $$ = mknode("-", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr '*' expr { $$ = mknode("*", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr '/' expr { $$ = mknode("/", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr OR expr { $$ = mknode("||", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr AND expr { $$ = mknode("&&", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr EQ expr { $$ = mknode("==", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr NE expr { $$ = mknode("!=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr GE expr { $$ = mknode(">=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr LE expr { $$ = mknode("<=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr '>' expr { $$ = mknode(">", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| expr '<' expr { $$ = mknode("<", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
-	| '+'	INTEGER_LITERAL
-	| '+' REAL_LITERAL
-	| '-' INTEGER_LITERAL
-	| '-' REAL_LITERAL
-	| '|' STRING_LITERAL '|'
-	| '*' IDENTIFIER
-	| '&' IDENTIFIER
+expr	: '(' expr ')'			{ $$ = mknode("",1,ADD_TAB); $$->nodes[0]=$2; }
+	| IDENTIFIER 			{ $$ = $1;}
+	| REAL_LITERAL			{ $$ = mknode($1,0,DONT_ADD_TAB);}
+	| INTEGER_LITERAL		{ $$ = $1;}
+	| BOOL_LITERAL			{ $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| STRING_LITERAL		{ $$ = $1; }
+	| IDENTIFIER '[' expr ']'	{ char* buffer; int size = asprintf(&buffer, "%s [", $1->token);
+					if (size) { $$ = mknode(buffer, 2, DONT_ADD_TAB); } else { $$ = mknode($1->token, 2, DONT_ADD_TAB); } 
+					$$->nodes[0] = $3; $$->nodes[1] = mknode("]", 0, DONT_ADD_TAB);}
+	| expr '+' expr			{ $$ = mknode("+", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '-' expr			{ $$ = mknode("-", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '*' expr			{ $$ = mknode("*", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '/' expr			{ $$ = mknode("/", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr OR expr			{ $$ = mknode("||", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr AND expr			{ $$ = mknode("&&", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr EQ expr			{ $$ = mknode("==", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr NE expr			{ $$ = mknode("!=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr GE expr			{ $$ = mknode(">=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr LE expr			{ $$ = mknode("<=", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '>' expr			{ $$ = mknode(">", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| expr '<' expr			{ $$ = mknode("<", 2, ADD_TAB); $$->nodes[0] = $1; $$->nodes[1] = $3;}
+	| '+' INTEGER_LITERAL		{ $$ = mknode("+", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
+	| '+' REAL_LITERAL		{ $$ = mknode("+", 1, DONT_NEWLINE); $$->nodes[0] = mknode($2,0,DONT_NEWLINE); }
+	| '-' INTEGER_LITERAL		{ $$ = mknode("-", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
+	| '-' REAL_LITERAL		{ $$ = mknode("-", 1, DONT_NEWLINE); $$->nodes[0] =  mknode($2,0,DONT_NEWLINE); }
+	| '|' STRING_LITERAL '|'	{ $$ = mknode("|", 2, DONT_NEWLINE); $$->nodes[0] = $2; $$->nodes[1] = mknode("|", 0, DONT_NEWLINE); }
+	| '*' IDENTIFIER		{ $$ = mknode("*", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
+	| '&' IDENTIFIER		{ $$ = mknode("&", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
 	;
 
 %%
