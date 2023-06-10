@@ -148,19 +148,38 @@ cond_else_statement 	:  IF '(' expr ')' statement ';' ELSE statement ';'		{$$ = 
 											&& strcmp(">",$3->token)!=0 && strcmp("true",$3->token)!=0 && strcmp("false",$3->token)!=0 )
 											{ if (exprBool==NULL) {addSemErrMsg(exprBool,"Expression type isn't boolean","Type Mismatch");}
 											else { exprBool = createSemErr("Expression type isn't boolean","Type Mismatch"); } }
+											
 											$$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
 											$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $5;
 											$$->nodes[1] = mknode("ELSE",1, ADD_TAB); $$->nodes[1]->nodes[0] = $8; }
 			|  IF '(' expr ')' '{' body_of_nested_statement '}' ELSE '{' body_of_nested_statement '}'	{$$ = mknode("IF ELSE",2,ADD_TAB);
-														$$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
-														$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $6;
-														$$->nodes[1] = mknode("ELSE",1, ADD_TAB); $$->nodes[1]->nodes[0] = $10; }
+											if (strcmp("==",$3->token)!=0 && strcmp("!=",$3->token)!=0 && strcmp(">=",$3->token)!=0 &&
+											strcmp("<=",$3->token)!=0 && strcmp("&&",$3->token)!=0 && strcmp("||",$3->token)!=0 && strcmp("<",$3->token)!=0
+											&& strcmp(">",$3->token)!=0 && strcmp("true",$3->token)!=0 && strcmp("false",$3->token)!=0 )
+											{ if (exprBool==NULL) {addSemErrMsg(exprBool,"Expression type isn't boolean","Type Mismatch");}
+											else { exprBool = createSemErr("Expression type isn't boolean","Type Mismatch"); } }
+											
+											$$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
+											$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $6;
+											$$->nodes[1] = mknode("ELSE",1, ADD_TAB); $$->nodes[1]->nodes[0] = $10; }
 			;
 
-cond_statement	: IF '(' expr ')' statement %prec then_var ';'				{ $$ = mknode("IF", 3, ADD_TAB); $$->nodes[0] = $3;
-											$$->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[2] = $5; }
-		 | IF '(' expr ')' '{' body_of_nested_statement '}' %prec then_var	{ $$ = mknode("IF", 3, ADD_TAB); $$->nodes[0] = $3;
-											$$->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[2] = $6; }
+cond_statement	: IF '(' expr ')' statement %prec then_var ';'				{ $$ = mknode("IF", 3, ADD_TAB);
+											if (strcmp("==",$3->token)!=0 && strcmp("!=",$3->token)!=0 && strcmp(">=",$3->token)!=0 &&
+											strcmp("<=",$3->token)!=0 && strcmp("&&",$3->token)!=0 && strcmp("||",$3->token)!=0 && strcmp("<",$3->token)!=0
+											&& strcmp(">",$3->token)!=0 && strcmp("true",$3->token)!=0 && strcmp("false",$3->token)!=0 )
+											{ if (exprBool==NULL) {addSemErrMsg(exprBool,"Expression type isn't boolean","Type Mismatch");}
+											else { exprBool = createSemErr("Expression type isn't boolean","Type Mismatch"); } }
+											
+											$$->nodes[0] = $3; $$->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[2] = $5; }
+		 | IF '(' expr ')' '{' body_of_nested_statement '}' %prec then_var	{ $$ = mknode("IF", 3, ADD_TAB);
+		 									if (strcmp("==",$3->token)!=0 && strcmp("!=",$3->token)!=0 && strcmp(">=",$3->token)!=0 &&
+											strcmp("<=",$3->token)!=0 && strcmp("&&",$3->token)!=0 && strcmp("||",$3->token)!=0 && strcmp("<",$3->token)!=0
+											&& strcmp(">",$3->token)!=0 && strcmp("true",$3->token)!=0 && strcmp("false",$3->token)!=0 )
+											{ if (exprBool==NULL) {addSemErrMsg(exprBool,"Expression type isn't boolean","Type Mismatch");}
+											else { exprBool = createSemErr("Expression type isn't boolean","Type Mismatch"); } }
+											
+		 									$$->nodes[0] = $3; $$->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[2] = $6; }
 		 ;
 
 body_of_nested_statement	: var_decl_list statements_list		{ $$ = mknode("",2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2; }
