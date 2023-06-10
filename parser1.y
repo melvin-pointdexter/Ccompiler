@@ -17,10 +17,11 @@ extern int yylex();
 }
 
 %token <s> REAL_LITERAL
-%token <s> INTEGER_LITERAL
+%token <n> INTEGER_LITERAL
 %token <s> BOOL_LITERAL
 %token <s> CHAR_LITERAL
-%token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING STRING_LITERAL
+%token <n> STRING_LITERAL
+%token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING
 %token <n> IDENTIFIER
 %token <s> OR AND EQ NE GE LE
 %type <n> S proc func assign_statement statement statements_list expr args type varlist var_decl_list stringlist
@@ -103,16 +104,16 @@ varlist	: IDENTIFIER ',' varlist		{ $$ = mknode($1->token, 1, DONT_ADD_TAB); $$-
 	| IDENTIFIER 				{ $$ = $1; }
 	;
 
-stringlist 	: IDENTIFIER '[' INTEGER_LITERAL ']' ',' stringlist			{ /*char* buffer; int size = asprintf(&buffer, "String [%s]", $3);
+stringlist 	: IDENTIFIER '[' INTEGER_LITERAL ']' ',' stringlist			{ char* buffer; int size = asprintf(&buffer, "String [%s]", $3->token);
 											if (size) { $$ = mknode(buffer, 2, DONT_ADD_TAB); } else { $$ = mknode("String", 2, DONT_ADD_TAB); } 
-											$$->nodes[0] = $1; $$->nodes[1] = $6;*/ }
-		| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL ',' stringlist 	{ /*char* buffer; int size = asprintf(&buffer, "String [%s]", $3);
+											$$->nodes[0] = $1; $$->nodes[1] = $6; }
+		| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL ',' stringlist 	{ char* buffer; int size = asprintf(&buffer, "String [%s]", $3->token);
 											if (size) { $$ = mknode(buffer, 4, DONT_ADD_TAB); } else { $$ = mknode("String", 4, DONT_ADD_TAB); } 
-											$$->nodes[0] = $1; $$->nodes[1] = mknode("=", 0, DONT_NEWLINE); $$->nodes[2] = mknode($6,0,DONT_ADD_TAB); $$->nodes[3] = $8;*/ }
-		| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL			{ char* buffer; int size = asprintf(&buffer, "String [%s]", $3);
+											$$->nodes[0] = $1; $$->nodes[1] = mknode("=", 0, DONT_NEWLINE); $$->nodes[2] = $6; $$->nodes[3] = $8; }
+		| IDENTIFIER '[' INTEGER_LITERAL ']' '=' STRING_LITERAL			{ char* buffer; int size = asprintf(&buffer, "String [%s]", $3->token);
 											if (size) { $$ = mknode(buffer, 3, DONT_ADD_TAB); } else { $$ = mknode("String", 3, DONT_ADD_TAB); } 
-											$$->nodes[0] = $1; $$->nodes[1] = mknode("=", 0, DONT_NEWLINE); $$->nodes[2] = mknode($6,0,DONT_ADD_TAB);}
-		| IDENTIFIER '[' INTEGER_LITERAL ']'					{ char* buffer; int size = asprintf(&buffer, "String [%s]", $3);
+											$$->nodes[0] = $1; $$->nodes[1] = mknode("=", 0, DONT_NEWLINE); $$->nodes[2] = $6;}
+		| IDENTIFIER '[' INTEGER_LITERAL ']'					{ char* buffer; int size = asprintf(&buffer, "String [%s]", $3->token);
 											if (size) { $$ = mknode(buffer, 1, DONT_ADD_TAB); } else { $$ = mknode("String", 1, DONT_ADD_TAB); } 
 											$$->nodes[0] = $1; }
 		;
@@ -151,8 +152,8 @@ statement	: assign_statement
 
 expr	: '(' expr ')'
 	| IDENTIFIER  { $$ = $1;}
-	| REAL_LITERAL  { $$ = $1;}
-	| INTEGER_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| REAL_LITERAL  { $$ = mknode($1,0,DONT_ADD_TAB);}
+	| INTEGER_LITERAL  { $$ = $1;}
 	| BOOL_LITERAL  { $$ = mknode($1, 0, DONT_ADD_TAB);}
 	| STRING_LITERAL
 	| IDENTIFIER '[' expr ']'
