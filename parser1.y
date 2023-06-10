@@ -3,6 +3,9 @@
 //#include <stdlib.h>
 #include "lex.yy.c"
 #include "ast.h"
+//#include "syTable.c"
+
+semErrNode** exprBool;
 
 extern int yylex();
 %}
@@ -139,9 +142,15 @@ assign_statement	: IDENTIFIER '=' expr ';'			{ $$ = mknode($1->token, 1, DONT_AD
 									$$->nodes[0] = $2; $$->nodes[1] = mknode("=",0,DONT_NEWLINE); $$->nodes[2] = $4; }
 			;		
 
-cond_else_statement 	:  IF '(' expr ')' statement ';' ELSE statement ';'			{$$ = mknode("IF ELSE",2,ADD_TAB); $$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
-												$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $5;
-												$$->nodes[1] = mknode("ELSE",1, ADD_TAB); $$->nodes[1]->nodes[0] = $8; }
+cond_else_statement 	:  IF '(' expr ')' statement ';' ELSE statement ';'		{$$ = mknode("IF ELSE",2,ADD_TAB);
+											if (strcmp("==",$3->token)!=0 && strcmp("!=",$3->token)!=0 && strcmp(">=",$3->token)!=0 &&
+											strcmp("<=",$3->token)!=0 && strcmp("&&",$3->token)!=0 && strcmp("||",$3->token)!=0 && strcmp("<",$3->token)!=0
+											&& strcmp(">",$3->token)!=0 && strcmp("true",$3->token)!=0 && strcmp("false",$3->token)!=0 )
+											{ if (exprBool==NULL) {addSemErrMsg(exprBool,"Expression type isn't boolean","Type Mismatch");}
+											else { exprBool = createSemErr("Expression type isn't boolean","Type Mismatch"); } }
+											$$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
+											$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $5;
+											$$->nodes[1] = mknode("ELSE",1, ADD_TAB); $$->nodes[1]->nodes[0] = $8; }
 			|  IF '(' expr ')' '{' body_of_nested_statement '}' ELSE '{' body_of_nested_statement '}'	{$$ = mknode("IF ELSE",2,ADD_TAB);
 														$$->nodes[0]= mknode("IF", 3, ADD_TAB); $$->nodes[0]->nodes[0] = $3;
 														$$->nodes[0]->nodes[1] = mknode("THEN",0, DONT_ADD_TAB); $$->nodes[0]->nodes[2] = $6;
@@ -199,9 +208,9 @@ int yyerror(char *msg) {
 }
 
 int main() {
-    yyparse();
-    
-    return 0;
+	exprBool = NULL;
+	yyparse();
+	return 0;
 }
 
 
