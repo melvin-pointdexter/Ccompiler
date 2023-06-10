@@ -1,5 +1,6 @@
 %{
 #include "ast.h"
+#include "syTable.c"
 #include <stdio.h>
 //#include <stdlib.h>
 #include <ctype.h>
@@ -33,8 +34,8 @@ string					{yylval.s = yytext; return STRING;}
 true					{yylval.s = yytext; return BOOL_LITERAL;}
 false					{yylval.s = yytext; return BOOL_LITERAL;}
 [a-zA-Z][a-zA-Z0-9]*			{yylval.n = mknode(yytext, 0, DONT_ADD_TAB); return IDENTIFIER;}
-[0-9]+					{yylval.s = yytext; return INTEGER_LITERAL;}
-0[xX][0-9A-F]+				{yylval.s = yytext; return INTEGER_LITERAL;}
+[0-9]+					{yylval.n = mknode(INT_TYPE, 0, DONT_ADD_TAB); return INTEGER_LITERAL;}
+0[xX][0-9A-F]+				{yylval.n = mknode(INT_TYPE, 0, DONT_ADD_TAB);  return INTEGER_LITERAL;}
 [0-9]+(\.[0-9]+)			{yylval.s = yytext; return REAL_LITERAL;}
 [0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)	{yylval.s = yytext; return REAL_LITERAL;}
 '.'					{if (isprint(yytext[1])){yylval.s = yytext; return CHAR_LITERAL; } yyerror("current character is not printable."); }
