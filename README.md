@@ -10,26 +10,14 @@ A brilliant and efficient compiler!
   - [x] string
   - [x] identifiers
   - [ ] pointers
-- [ ] Other Lexemes **(** ( ) [ ] { } | ; , **)**
+- [x] Other Lexemes **(** ( ) [ ] { } | ; , **)**
 - [x] Functions
-- [ ] Comments
+- [x] Comments
 
 ## YACC Task List
-- [ ] Keywords
-- [ ] Literals
-  - [ ] bool
-  - [ ] char
-  - [ ] int
-  - [ ] real
-  - [ ] string
-  - [ ] identifiers
-  - [ ] pointers
-- [ ] Other Lexemes **(** ( ) [ ] { } | ; , **)**
-- [ ] Functions
-- [ ] Comments
-
-Mr. S is working on:
->
-
-Mr. A is working on:
->
+- [x] Keywords
+- [x] Statements
+- [x] Functions
+- [x] procedures
+- [ ] if/else
+- [ ] while

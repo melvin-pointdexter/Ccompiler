@@ -153,7 +153,7 @@ void addVarData (struct varDataNode** varDataListAddr, char* idenStr, char* iden
 	
 	if (0 == *(varDataListAddr))
 	{
-		*(varDataListAddr) = createVarDataNode(idenStr, idenType)
+		*(varDataListAddr) = createVarDataNode(idenStr, idenType);
 	}
 	else
 	{
@@ -258,6 +258,7 @@ struct varScopeNode** createFuncScopesArr(int* funcScopesNumAddr, struct node* c
 				|| (NODE_PROC == currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->nodes[0]->NODETYPE)
 				|| (NODE_FUNC == currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->nodes[0]->NODETYPE)
 			)
+		)
 		{
 			currFuncScopesArr = createFuncScopesArr(&funcScopesNum, currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->nodes[0]);	
 		}
@@ -265,10 +266,10 @@ struct varScopeNode** createFuncScopesArr(int* funcScopesNumAddr, struct node* c
 		{
 			if ((NODE_FUNC_PROD_LIST == currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->NODETYPE) ||
 				(NODE_PROC == currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->NODETYPE) ||
-				|| (NODE_FUNC == currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->NODETYPE)
+				(NODE_FUNC == currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->NODETYPE)
 			)
 			{
-				currFuncScopesArr = createFuncScopeArr(&funcScopesNum, currFunc->nodes[0]->nodes[(currFunc->sons - 1)]);
+				currFuncScopesArr = createFuncScopesArr(&funcScopesNum, currFunc->nodes[0]->nodes[(currFunc->sons - 1)]);
 			}
 			else if (DONT_ADD_TAB == currFunc->nodes[0]->nodes[(currFunc->sons - 1)]->NODETYPE)
 			{
@@ -285,10 +286,16 @@ struct varScopeNode** createFuncScopesArr(int* funcScopesNumAddr, struct node* c
 		}
 		
 		// first , add function to array:
-		realloc(retScopesArr, (struct varScopeNode**) * (1 + funcRetScopesNum));
-		retScopesArr[funcRetScopesNum] = createScopeForFunc( ( 4 == currFunc->nodes[0]->sons ) ? ( currFunc->nodes[0]->nodes[2] ) :
-			(  currFunc->nodes[0]->nodes[1] ),
-			currFunc->nodes[0]->nodes[0], 0, currFuncVarDecList, funcScopesNum, 0, currFuncScopesArr, 0); 
+		int tempSize = (sizeof(struct varScopeNode**) * (1 + funcRetScopesNum));
+		struct varScopeNode **  retScopesArrTemp = realloc(retScopesArr, tempSize);
+		if (retScopesArrTemp==NULL){
+			printf("ERROR in realloc");
+			exit(1);
+		}
+		retScopesArr=retScopesArrTemp;
+		retScopesArr[funcRetScopesNum] = createScopeForFunc( (( 4 == currFunc->nodes[0]->sons ) ? ( currFunc->nodes[0]->nodes[2]->token ) :
+			(  currFunc->nodes[0]->nodes[1]->token )),
+			currFunc->nodes[0]->nodes[0]->token, 0, currFuncVarDecList, funcScopesNum, 0, currFuncScopesArr, 0); 
 		++funcRetScopesNum;
 		
 		currFunc = currFunc->nodes[1];
