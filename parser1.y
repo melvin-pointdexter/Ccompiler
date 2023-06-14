@@ -11,6 +11,8 @@
 #include "syTable.h"
 
 semErrNode** exprBool;
+int howManyMain;
+struct varDataNode ;
 
 extern int yylex();
 %}
@@ -52,22 +54,26 @@ S       : func_prod_list		{ $$ = mknode("Code", 1, NODE_PROGRAM); $$->nodes[0] =
         ;
 
 func_prod_list : func				{ $$ = $1; }
-		| func func_prod_list		{ $$ = mknode("", 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| func func_prod_list		{ $$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		| proc				{ $$ = $1; }
-		| proc func_prod_list		{ $$ = mknode("", 2, NODE_FUNC_PROD_LIST); $$->nodes[0] = $1; $$->nodes[1] = $2; }
+		| proc func_prod_list		{ $$ = mknode("", 2, DONT_PRINT); $$->nodes[0] = $1; $$->nodes[1] = $2; }
 		;
 
-func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'	{ $$ = mknode("Func", 5, NODE_PROC); $$->nodes[0] = $2; $$->nodes[1] = $7;
+func    : FUNCTION IDENTIFIER '(' args ')' ':' type '{' body RETURN expr ';' '}'	{ if (strcmp("main",$2->token)==0) { howManyMain+=1; yyerror("Main supposed to be void"); }
+											$$ = mknode("Func", 5, NODE_PROC); $$->nodes[0] = $2; $$->nodes[1] = $7;
 											$$->nodes[2] = mknode("ARGS",1, ADD_TAB); $$->nodes[2]->nodes[0]=$4;
 											$$->nodes[3] = $9; $$->nodes[4] = mknode("Return",1,ADD_TAB); $$->nodes[4]->nodes[0] = $11; }
-	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'		{$$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = $2; $$->nodes[1] = $6;
+	| FUNCTION IDENTIFIER '(' ')' ':' type '{' body RETURN expr ';' '}'		{ if (strcmp("main",$2->token)==0) { howManyMain+=1; yyerror("Main supposed to be void"); }
+											$$ = mknode("Func", 4, NODE_PROC); $$->nodes[0] = $2; $$->nodes[1] = $6;
 											$$->nodes[2] = $8; $$->nodes[3] = mknode("Return",1,ADD_TAB); $$->nodes[3]->nodes[0] = $10; }
 	;
 	
-proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'	{ $$ = mknode("Proc", 4, NODE_PROC); $$->nodes[0] = $2;
+proc    : FUNCTION IDENTIFIER '(' args ')' ':' VOID '{' body '}'	{ if (strcmp("main",$2->token)==0) { howManyMain+=1; yyerror("Main supposed to have no args"); }
+									$$ = mknode("Proc", 4, NODE_PROC); $$->nodes[0] = $2;
 									$$->nodes[1] = mknode("ARGS",1, ADD_TAB); $$->nodes[1]->nodes[0]=$4;
 									$$->nodes[2] = mknode("RET VOID", 0, NODE_TERMINAL); $$->nodes[3] = $9;}
-	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ $$ = mknode("Proc", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
+	| FUNCTION IDENTIFIER '(' ')' ':' VOID '{' body '}'		{ if (strcmp("main",$2->token)==0) { howManyMain+=1; if (howManyMain>1) { yyerror("main already exists"); } }
+									$$ = mknode("Proc", 3, NODE_PROC); printf("Node\n"); $$->nodes[0] = $2; printf("B");
 									$$->nodes[1] = mknode("RET VOID", 0, NODE_TERMINAL);
 									$$->nodes[2] = $8;}
 	;
@@ -238,9 +244,10 @@ expr	: '(' expr ')'				{ $$ = mknode("",1,ADD_TAB); $$->nodes[0]=$2; }
 	| '+' REAL_LITERAL			{ $$ = mknode("+", 1, DONT_NEWLINE); $$->nodes[0] = mknode($2,0,DONT_NEWLINE); }
 	| '-' INTEGER_LITERAL			{ $$ = mknode("-", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
 	| '-' REAL_LITERAL			{ $$ = mknode("-", 1, DONT_NEWLINE); $$->nodes[0] =  mknode($2,0,DONT_NEWLINE); }
-	| '|' STRING_LITERAL '|'		{ $$ = mknode("|", 2, DONT_NEWLINE); $$->nodes[0] = $2; $$->nodes[1] = mknode("|", 0, DONT_NEWLINE); }
-	| '*' IDENTIFIER			{ $$ = mknode("*", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
-	| '&' IDENTIFIER			{ $$ = mknode("&", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
+	| '|' STRING_LITERAL '|'		{ $$ = mknode("|", 2, ADD_TAB); $$->nodes[0] = $2; $$->nodes[1] = mknode("|", 0, DONT_ADD_TAB); }
+	| '|' IDENTIFIER '|'			{ $$ = mknode("|", 2, ADD_TAB); $$->nodes[0] = $2; $$->nodes[1] = mknode("|", 0, DONT_ADD_TAB); }
+	| '*' expr				{ $$ = mknode("*", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
+	| '&' expr				{ $$ = mknode("&", 1, DONT_NEWLINE); $$->nodes[0] = $2; }
 	;
 
 parameter_list	: expr ',' parameter_list	{ $$ = mknode("",2, DONT_PRINT); $$->nodes[0]=$1; $$->nodes[1]=$3; }
@@ -257,6 +264,7 @@ int yyerror(char *msg) {
 
 int main() {
 	exprBool = NULL;
+	howManyMain=0;
 	yyparse();
 	return 0;
 }

@@ -39,10 +39,10 @@ false					{yylval.s = yytext; return BOOL_LITERAL;}
 [0-9]+(\.[0-9]+)			{yylval.s = yytext; return REAL_LITERAL;}
 [0-9]+(\.[0-9]+)?([eE][-+]?[0-9]+)	{yylval.s = yytext; return REAL_LITERAL;}
 '.'					{if (isprint(yytext[1])){yylval.s = yytext; return CHAR_LITERAL; } yyerror("current character is not printable."); }
-\/\*[^\/\*]*\*\/			{ }
+\/\*([^\/\*]|\*[^\/]|[^\*]\/)*\*\/	{ }
 \".*\\\".*\"				{yyerror("double quotes are not allowed.");}
 \"[^\"\n]*\"				{yylval.n = mknode(yytext,0,DONT_ADD_TAB); return STRING_LITERAL;}
-[-+()*/{}\;\|\,=\[\]\(\)\:]		{yylval.c = yytext[0];return yytext[0];}
+[-+()*/{}\;\|\,=\[\]\(\)\:<>&]		{yylval.c = yytext[0];return yytext[0];}
 [ \t\f\v\n]				{ }
 \|\|					{yylval.s = yytext; return OR;}
 \&\&					{yylval.s = yytext; return AND;}
