@@ -1,4 +1,9 @@
 %{
+
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE 1
+#endif
+
 #include <stdio.h>
 //#include <stdlib.h>
 #include "lex.yy.c"
@@ -22,7 +27,7 @@ extern int yylex();
 %token <s> REAL_LITERAL
 %token <n> INTEGER_LITERAL
 %token <s> BOOL_LITERAL
-%token <c> CHAR_LITERAL
+%token <s> CHAR_LITERAL
 %token <n> STRING_LITERAL
 %token <s> FUNCTION RETURN IF ELSE DO WHILE FOR VAR NULL_P VOID ARG INT_P REAL_P CHAR_P INT REAL CHAR BOOL STRING
 %token <n> IDENTIFIER
@@ -139,7 +144,7 @@ statement	: assign_statement			{ $$ = $1; }
 		| '{' body_of_nested_statement '}'	{ $$ = mknode("Nested", 1, ADD_TAB); $$->nodes[0] = $2; }
 		;
 		
-assign_statement	: IDENTIFIER '=' expr ';'			{ $$ = mknode($1->token, 1, DONT_ADD_TAB); $$->nodes[0] = $3; }
+assign_statement	: IDENTIFIER '=' expr ';'			{ $$ = mknode($1->token, 2, DONT_ADD_TAB); $$->nodes[0] = mknode("=",0,DONT_NEWLINE); $$->nodes[1] = $3; }
 			| IDENTIFIER '[' expr ']' '=' expr ';'		{ char* buffer; int size = asprintf(&buffer, "%s [", $1->token);
 									if (size) { $$ = mknode(buffer, 3, DONT_ADD_TAB); } else { $$ = mknode($1->token, 3, DONT_ADD_TAB); } 
 									$$->nodes[0] = $3; $$->nodes[1] = mknode("] =", 0, DONT_NEWLINE); $$->nodes[2] = $6;}
@@ -207,11 +212,12 @@ while_statement	: WHILE '(' expr ')' statement ';'				{$$ = mknode("WHILE",2,ADD
 
 
 expr	: '(' expr ')'				{ $$ = mknode("",1,ADD_TAB); $$->nodes[0]=$2; }
-	| IDENTIFIER 				{ $$ = $1;}
-	| REAL_LITERAL				{ $$ = mknode($1,0,DONT_ADD_TAB);}
-	| INTEGER_LITERAL			{ $$ = $1;}
-	| BOOL_LITERAL				{ $$ = mknode($1, 0, DONT_ADD_TAB);}
+	| IDENTIFIER 				{ $$ = $1; }
+	| REAL_LITERAL				{ $$ = mknode($1,0,DONT_ADD_TAB); }
+	| INTEGER_LITERAL			{ $$ = $1; }
+	| BOOL_LITERAL				{ $$ = mknode($1, 0, DONT_ADD_TAB); }
 	| STRING_LITERAL			{ $$ = $1; }
+	| CHAR_LITERAL				{ $$ = mknode($1, 0, DONT_ADD_TAB); }
 	| IDENTIFIER '[' expr ']'		{ char* buffer; int size = asprintf(&buffer, "%s [", $1->token);
 						if (size) { $$ = mknode(buffer, 2, DONT_ADD_TAB); } else { $$ = mknode($1->token, 2, DONT_ADD_TAB); } 
 						$$->nodes[0] = $3; $$->nodes[1] = mknode("]", 0, DONT_ADD_TAB);}
