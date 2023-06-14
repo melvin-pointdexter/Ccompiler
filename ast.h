@@ -46,13 +46,16 @@ struct node* mknode(char* token, int sizeArr, int nodeType) {
 }
 void printAst(struct node* tree, int tabs) {
 	if (tree->NODETYPE!=DONT_PRINT){
-		if (tree->NODETYPE!=DONT_NEWLINE)
+		if (tree->NODETYPE!=DONT_NEWLINE) {
 			printf("\n");
-		//print current node with enough tabs
-		for (int i = 0; i < tabs; i++)
-			printf("\t");
-	
-		printf("(%s %d", tree->token, tree->sons);
+			//print current node with enough tabs
+			for (int i = 0; i < tabs; i++)
+				printf("\t");
+		}
+		if (tree->NODETYPE!=DONT_ADD_TAB)
+			printf("(%s %d", tree->token, tree->sons);
+		else
+			printf("(%s %d)", tree->token, tree->sons);
 	}
 	//decide how many tabs there are in the other nodes
 	int newTabs = tabs;
@@ -72,7 +75,7 @@ void printAst(struct node* tree, int tabs) {
 		printAst(tree->nodes[i],newTabs);
 	}
 	
-	if (tree->NODETYPE!=DONT_PRINT) {
+	if (tree->NODETYPE!=DONT_PRINT && tree->NODETYPE!=DONT_ADD_TAB) {
 		if (tree->sons!=0){
 			printf("\n");
 			for (int i = 0; i < tabs; i++)
